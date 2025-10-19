@@ -86,11 +86,11 @@ export const InsuranceRecordSchema = z
 
     // 组织维度
     chengdu_branch: z.enum(chengduBranches, {
-      errorMap: () => ({ message: '地域属性必须为"成都"或"中支"' }),
+      message: '地域属性必须为"成都"或"中支"',
     }),
 
     third_level_organization: z.enum(thirdLevelOrganizations, {
-      errorMap: () => ({ message: '三级机构代码不存在' }),
+      message: '三级机构代码不存在',
     }),
 
     // 客户维度
@@ -98,44 +98,52 @@ export const InsuranceRecordSchema = z
 
     // 产品维度
     insurance_type: z.enum(insuranceTypes, {
-      errorMap: () => ({ message: '保险类型只能是"商业险"或"交强险"' }),
+      message: '保险类型只能是"商业险"或"交强险"',
     }),
 
     business_type_category: z.string().min(1, '业务类型不能为空'),
 
     coverage_type: z.enum(coverageTypes, {
-      errorMap: () => ({ message: '险别组合必须是"主全"、"交三"或"单交"' }),
+      message: '险别组合必须是"主全"、"交三"或"单交"',
     }),
 
     // 业务属性
     renewal_status: z.enum(renewalStatuses, {
-      errorMap: () => ({ message: '新续转状态必须是"新保"、"续保"或"转保"' }),
+      message: '新续转状态必须是"新保"、"续保"或"转保"',
     }),
 
     is_new_energy_vehicle: z.boolean({
-      errorMap: () => ({ message: '是否新能源车必须为布尔值' }),
+      message: '是否新能源车必须为布尔值',
     }),
 
     is_transferred_vehicle: z.boolean({
-      errorMap: () => ({ message: '是否过户车必须为布尔值' }),
+      message: '是否过户车必须为布尔值',
     }),
 
-    // 评级维度
-    vehicle_insurance_grade: z.enum(vehicleGrades, {
-      errorMap: () => ({ message: '车险评级必须是 A-G 或 X' }),
-    }),
+    // 评级维度 - 设为可选字段，允许空值
+    vehicle_insurance_grade: z
+      .enum(vehicleGrades, {
+        message: '车险评级必须是 A-G',
+      })
+      .optional(),
 
-    highway_risk_grade: z.enum([...vehicleGrades, 'X'] as const, {
-      errorMap: () => ({ message: '高速风险等级必须是 A-F 或 X' }),
-    }),
+    highway_risk_grade: z
+      .enum([...vehicleGrades, 'X'] as const, {
+        message: '高速风险等级必须是 A-F 或 X',
+      })
+      .optional(),
 
-    large_truck_score: z.enum([...vehicleGrades.slice(0, 5), 'X'] as const, {
-      errorMap: () => ({ message: '大货车评分必须是 A-E 或 X' }),
-    }),
+    large_truck_score: z
+      .enum([...vehicleGrades.slice(0, 5), 'X'] as const, {
+        message: '大货车评分必须是 A-E 或 X',
+      })
+      .optional(),
 
-    small_truck_score: z.enum([...vehicleGrades.slice(0, 5), 'X'] as const, {
-      errorMap: () => ({ message: '小货车评分必须是 A-E 或 X' }),
-    }),
+    small_truck_score: z
+      .enum([...vehicleGrades.slice(0, 5), 'X'] as const, {
+        message: '小货车评分必须是 A-E 或 X',
+      })
+      .optional(),
 
     // 渠道维度
     terminal_source: z.string().min(1, '终端来源不能为空'),
@@ -178,46 +186,14 @@ export const InsuranceRecordSchema = z
 
     marginal_contribution_amount_yuan: z.number(), // 可为负数
   })
-  .refine(
-    data => data.matured_premium_yuan <= data.signed_premium_yuan,
-    {
-      message: '满期保费不能超过签单保费',
-      path: ['matured_premium_yuan'],
-    }
-  )
-  .refine(data => data.claim_case_count <= data.policy_count, {
-    message: '赔案件数不能超过保单件数',
-    path: ['claim_case_count'],
+  .refine(data => data.matured_premium_yuan <= data.signed_premium_yuan, {
+    message: '满期保费不能超过签单保费',
+    path: ['matured_premium_yuan'],
   })
-  .refine(
-    data => {
-      // 商业险折前保费必须大于等于签单保费
-      if (data.insurance_type === '商业险') {
-        return (
-          data.commercial_premium_before_discount_yuan >=
-          data.signed_premium_yuan
-        )
-      }
-      return true
-    },
-    {
-      message: '商业险折前保费必须大于等于签单保费',
-      path: ['commercial_premium_before_discount_yuan'],
-    }
-  )
-  .refine(
-    data => {
-      // 非营业客车必须提供有效的车险评级
-      if (data.customer_category_3 === '非营业个人客车') {
-        return data.vehicle_insurance_grade !== 'X'
-      }
-      return true
-    },
-    {
-      message: '非营业个人客车必须提供有效的车险评级（不能为 X）',
-      path: ['vehicle_insurance_grade'],
-    }
-  )
+// 取消以下规则以放宽上传校验：
+// - 赔案件数 ≤ 保单件数（业务场景下可能不成立）
+// - 商业险折前保费 ≥ 签单保费（现已不强制）
+// - 非营业个人客车评级不能为 X（现允许为 X）
 
 /**
  * 批量验证结果类型
@@ -239,16 +215,19 @@ export function validateRecord(
     }
   } catch (error) {
     if (error instanceof z.ZodError) {
+      // 确保 error.issues 存在且是数组
+      const errorList = error.issues || []
       return {
         valid: false,
-        errors: error.errors.map(
-          err => `${err.path.join('.')}: ${err.message}`
+        errors: errorList.map(
+          (err: z.ZodIssue) =>
+            `${err.path?.join('.') || 'unknown'}: ${err.message || '验证失败'}`
         ),
       }
     }
     return {
       valid: false,
-      errors: ['未知验证错误'],
+      errors: [error instanceof Error ? error.message : '未知验证错误'],
     }
   }
 }

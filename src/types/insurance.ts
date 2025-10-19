@@ -41,7 +41,15 @@ export type RenewalStatus = '新保' | '续保' | '转保'
 /**
  * 车险评级
  */
-export type VehicleInsuranceGrade = 'A' | 'B' | 'C' | 'D' | 'E' | 'F' | 'G' | 'X'
+export type VehicleInsuranceGrade =
+  | 'A'
+  | 'B'
+  | 'C'
+  | 'D'
+  | 'E'
+  | 'F'
+  | 'G'
+  | 'X'
 
 /**
  * 高速风险等级
@@ -82,10 +90,10 @@ export interface InsuranceRecord {
   is_transferred_vehicle: boolean // 是否过户车
 
   // 评级维度
-  vehicle_insurance_grade: VehicleInsuranceGrade // 车险评级 A-G/X
-  highway_risk_grade: HighwayRiskGrade // 高速风险等级
-  large_truck_score: TruckScore // 大货车评分
-  small_truck_score: TruckScore // 小货车评分
+  vehicle_insurance_grade?: VehicleInsuranceGrade // 车险评级 A-G/X（可选）
+  highway_risk_grade?: HighwayRiskGrade // 高速风险等级（可选）
+  large_truck_score?: TruckScore // 大货车评分（可选）
+  small_truck_score?: TruckScore // 小货车评分（可选）
 
   // 渠道维度
   terminal_source: string // 终端来源
@@ -111,6 +119,8 @@ export interface KPIResult {
   // 率值指标
   loss_ratio: number | null // 满期赔付率
   premium_progress: number | null // 保费达成率
+  premium_time_progress_achievement_rate: number | null // 保费时间进度达成率 = (保费达成率 / 时间进度) × 100
+  policy_count_time_progress_achievement_rate: number | null // 件数时间进度达成率
   maturity_ratio: number | null // 满期率
   expense_ratio: number | null // 费用率
   contribution_margin_ratio: number | null // 满期边际贡献率
@@ -126,11 +136,39 @@ export interface KPIResult {
   reported_claim_payment: number // 已报告赔款
   expense_amount: number // 费用金额
   contribution_margin_amount: number // 边际贡献额
+  annual_premium_target: number | null // 年度保费目标
+  annual_policy_count_target: number | null // 年度件数目标
 
   // 均值指标（元）
   average_premium: number | null // 单均保费
   average_claim: number | null // 案均赔款
   average_expense: number | null // 单均费用
+  average_contribution: number | null // 单均边贡额
+}
+
+/**
+ * 保费目标配置
+ */
+export interface PremiumTargets {
+  /**
+   * 适用年度
+   */
+  year: number
+
+  /**
+   * 车险整体年度保费目标（单位：元）
+   */
+  overall: number
+
+  /**
+   * 各业务类型年度保费目标（单位：元，key 为规范化后的 business_type_category 文本）
+   */
+  byBusinessType: Record<string, number>
+
+  /**
+   * 最后更新时间（ISO 字符串）
+   */
+  updatedAt: string | null
 }
 
 /**
@@ -169,27 +207,32 @@ export interface KPIResponse {
  * 筛选器状态
  */
 export interface FilterState {
-  // 时间筛选
+  // 顶层筛选
   viewMode: 'single' | 'trend' // 分析模式
-  policyYear?: number
-  weekNumbers?: number[] // 单周或多周
+  dataViewType: 'current' | 'increment' // 数据类型：当周值/周增量
 
-  // 空间筛选
-  organizations?: string[] // 三级机构
+  // 时间筛选
+  years: number[] // 保单年度（多选）
+  weeks: number[] // 周序号（多选）
+  singleModeWeek: number | null // 单周模式当前选择的周次
+  trendModeWeeks: number[] // 多周模式当前选择的周次集合
+
+  // 组织筛选
+  organizations: string[] // 三级机构
 
   // 产品筛选
-  insuranceTypes?: InsuranceType[]
-  businessTypes?: string[]
-  coverageTypes?: CoverageType[]
+  insuranceTypes: string[] // 保险类型
+  businessTypes: string[] // 业务类型
+  coverageTypes: string[] // 险别组合
 
   // 客户筛选
-  customerCategories?: string[]
-  vehicleGrades?: VehicleInsuranceGrade[]
+  customerCategories: string[] // 客户分类
+  vehicleGrades: string[] // 车险评级
 
-  // 渠道筛选
-  terminalSources?: string[]
-  isNewEnergy?: boolean | null
-  renewalStatuses?: RenewalStatus[]
+  // 其他筛选
+  terminalSources: string[]
+  isNewEnergy: boolean | null
+  renewalStatuses: string[] // 新续转状态
 }
 
 // ============= 聚合结果类型 =============

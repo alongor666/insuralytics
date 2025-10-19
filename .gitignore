@@ -34,3 +34,7 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# 敏感文档和测试数据 - 不上传到网络
+/开发文档/
+/test/
