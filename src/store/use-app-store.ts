@@ -135,6 +135,7 @@ export const useAppStore = create<AppState>()(
       viewMode: 'single',
       expandedPanels: new Set(),
       selectedOrganizations: [],
+      premiumTargets: loadPremiumTargetsFromStorage(),
 
       // ============= 数据操作 =============
       setRawData: data =>
@@ -259,6 +260,53 @@ export const useAppStore = create<AppState>()(
           }),
           false,
           'setViewMode'
+        ),
+
+      // ============= 目标管理 =============
+      setPremiumTargets: targets =>
+        set(
+          () => {
+            const normalizedMap: Record<string, number> = {}
+            Object.entries(targets.byBusinessType).forEach(([key, value]) => {
+              const normalizedKey = normalizeChineseText(key)
+              normalizedMap[normalizedKey] = Math.max(
+                0,
+                Number.isFinite(value) ? value : 0
+              )
+            })
+
+            const nextTargets: PremiumTargets = {
+              year: targets.year || new Date().getFullYear(),
+              overall: Math.max(
+                0,
+                Number.isFinite(targets.overall) ? targets.overall : 0
+              ),
+              byBusinessType: normalizedMap,
+              updatedAt: targets.updatedAt ?? new Date().toISOString(),
+            }
+
+            if (typeof window !== 'undefined') {
+              window.localStorage.setItem(
+                PREMIUM_TARGET_STORAGE_KEY,
+                JSON.stringify(nextTargets)
+              )
+            }
+
+            return {
+              premiumTargets: nextTargets,
+            }
+          },
+          false,
+          'setPremiumTargets'
+        ),
+
+      loadPremiumTargets: () =>
+        set(
+          () => ({
+            premiumTargets: loadPremiumTargetsFromStorage(),
+          }),
+          false,
+          'loadPremiumTargets'
         ),
 
       // ============= 缓存操作 =============

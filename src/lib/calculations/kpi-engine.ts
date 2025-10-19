@@ -20,6 +20,11 @@ interface BaseAggregation {
   marginal_contribution_amount_yuan: number
 }
 
+interface KPIComputationOptions {
+  premiumTargetYuan?: number | null
+  policyCountTarget?: number | null
+}
+
 /**
  * 安全除法 - 防止除零错误
  * @param numerator 分子
@@ -73,7 +78,22 @@ function aggregateData(records: InsuranceRecord[]): BaseAggregation {
  * @param aggregated 聚合后的基础数据
  * @returns KPI 计算结果
  */
-function computeKPIs(aggregated: BaseAggregation): KPIResult {
+function computeKPIs(
+  aggregated: BaseAggregation,
+  options: KPIComputationOptions = {}
+): KPIResult {
+  const premiumTargetYuan =
+    typeof options.premiumTargetYuan === 'number'
+      ? Math.max(0, options.premiumTargetYuan)
+      : null
+  const policyCountTarget =
+    typeof options.policyCountTarget === 'number'
+      ? Math.max(0, Math.round(options.policyCountTarget))
+      : null
+
+  const premiumPlanYuan =
+    premiumTargetYuan !== null ? premiumTargetYuan : aggregated.premium_plan_yuan
+
   // ============= 率值指标计算 =============
 
   // 满期赔付率 = 已报告赔款 / 满期保费 * 100
@@ -146,21 +166,18 @@ function computeKPIs(aggregated: BaseAggregation): KPIResult {
     aggregated.commercial_premium_before_discount_yuan
   )
 
-  // 保费达成率 = (签单保费 / 保费计划) / (已过天数/365) * 100
-  // 注：这里简化计算，实际需要根据当前日期计算已过天数
+  // 计算年度时间进度
   const currentDayOfYear = Math.floor(
     (Date.now() - new Date(new Date().getFullYear(), 0, 0).getTime()) /
       (1000 * 60 * 60 * 24)
   )
   const yearProgress = currentDayOfYear / 365
-  const premium_progress_temp = safeDivide(
+  const completionRatio = safeDivide(
     aggregated.signed_premium_yuan,
-    aggregated.premium_plan_yuan
+    premiumPlanYuan
   )
   const premium_progress =
-    premium_progress_temp !== null && yearProgress > 0
-      ? (premium_progress_temp / yearProgress) * 100
-      : null
+    completionRatio !== null ? completionRatio * 100 : null
 
   // ============= 绝对值指标（转换为万元）=============
 
@@ -204,16 +221,25 @@ function computeKPIs(aggregated: BaseAggregation): KPIResult {
 
   // ============= 时间进度达成率 =============
   const premium_time_progress_achievement_rate =
-    premium_progress !== null && yearProgress > 0
-      ? (premium_progress / (yearProgress * 100)) * 100
+    completionRatio !== null && yearProgress > 0
+      ? (completionRatio / yearProgress) * 100
       : null
 
   // 计算件数时间进度达成率（假设有年度件数目标）
-  const policy_count_time_progress_achievement_rate = null // 暂不计算，需要年度目标数据
+  const policyCompletionRatio =
+    policyCountTarget !== null
+      ? safeDivide(aggregated.policy_count, policyCountTarget)
+      : null
+  const policy_count_time_progress_achievement_rate =
+    policyCompletionRatio !== null && yearProgress > 0
+      ? (policyCompletionRatio / yearProgress) * 100
+      : null
 
   // ============= 年度目标（暂不计算，需要额外数据）=============
-  const annual_premium_target = null
-  const annual_policy_count_target = null
+  const annual_premium_target =
+    premiumPlanYuan > 0 ? Math.round(premiumPlanYuan / 10000) : null
+  const annual_policy_count_target =
+    policyCountTarget !== null ? policyCountTarget : null
 
   return {
     // 率值指标
@@ -256,9 +282,14 @@ export class KPIEngine {
   /**
    * 生成缓存键
    */
-  private generateCacheKey(records: InsuranceRecord[], mode?: string): string {
+  private generateCacheKey(
+    records: InsuranceRecord[],
+    mode?: string,
+    targetOverride?: number | null
+  ): string {
     // 使用记录数量和基础字段的哈希作为缓存键
-    const key = `${mode || 'current'}_${records.length}_${records.reduce((sum, r) => sum + r.signed_premium_yuan, 0)}`
+    const targetKey = targetOverride ? `_${Math.round(targetOverride)}` : ''
+    const key = `${mode || 'current'}_${records.length}_${records.reduce((sum, r) => sum + r.signed_premium_yuan, 0)}${targetKey}`
     return key
   }
 
@@ -268,13 +299,18 @@ export class KPIEngine {
    * @param useCache 是否使用缓存（默认 true）
    * @returns KPI 计算结果
    */
-  calculate(records: InsuranceRecord[], useCache = true): KPIResult {
+  calculate(
+    records: InsuranceRecord[],
+    options: { annualTargetYuan?: number | null; useCache?: boolean } = {}
+  ): KPIResult {
+    const { annualTargetYuan = null, useCache = true } = options
+
     if (records.length === 0) {
       return this.getEmptyKPIResult()
     }
 
     // 检查缓存
-    const cacheKey = this.generateCacheKey(records)
+    const cacheKey = this.generateCacheKey(records, 'current', annualTargetYuan)
     if (useCache && this.cache.has(cacheKey)) {
       return this.cache.get(cacheKey)!
     }
@@ -283,7 +319,9 @@ export class KPIEngine {
     const aggregated = aggregateData(records)
 
     // 计算 KPI
-    const result = computeKPIs(aggregated)
+    const result = computeKPIs(aggregated, {
+      premiumTargetYuan: annualTargetYuan ?? null,
+    })
 
     // 缓存结果
     if (useCache) {
@@ -410,6 +448,9 @@ export const kpiEngine = new KPIEngine()
 /**
  * 便捷函数：直接计算 KPI
  */
-export function calculateKPIs(records: InsuranceRecord[]): KPIResult {
-  return kpiEngine.calculate(records)
+export function calculateKPIs(
+  records: InsuranceRecord[],
+  options?: { annualTargetYuan?: number | null; useCache?: boolean }
+): KPIResult {
+  return kpiEngine.calculate(records, options)
 }

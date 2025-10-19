@@ -8,6 +8,7 @@ import { useMemo } from 'react'
 import { useAppStore, useFilteredData } from '@/store/use-app-store'
 import { kpiEngine } from '@/lib/calculations/kpi-engine'
 import type { KPIResult, InsuranceRecord } from '@/types/insurance'
+import { normalizeChineseText } from '@/lib/utils'
 
 /**
  * 使用 KPI 计算
@@ -18,6 +19,25 @@ export function useKPI(): KPIResult | null {
   const rawData = useAppStore(state => state.rawData)
   const filters = useAppStore(state => state.filters)
   const dataViewType = filters.dataViewType
+  const premiumTargets = useAppStore(state => state.premiumTargets)
+
+  const currentTargetYuan = useMemo(() => {
+    if (!premiumTargets) return null
+
+    if (filters.businessTypes.length > 0) {
+      const sum = filters.businessTypes.reduce((acc, type) => {
+        const normalized = normalizeChineseText(type)
+        return (
+          acc + (premiumTargets.byBusinessType[normalized] ?? 0)
+        )
+      }, 0)
+      if (sum > 0) {
+        return sum
+      }
+    }
+
+    return premiumTargets.overall > 0 ? premiumTargets.overall : null
+  }, [filters.businessTypes, premiumTargets])
 
   const kpiResult = useMemo(() => {
     if (filteredData.length === 0) {
@@ -26,7 +46,9 @@ export function useKPI(): KPIResult | null {
 
     // 当周值模式：直接计算
     if (dataViewType === 'current') {
-      return kpiEngine.calculate(filteredData)
+      return kpiEngine.calculate(filteredData, {
+        annualTargetYuan: currentTargetYuan ?? undefined,
+      })
     }
 
     // 周增量模式：需要计算当前周和前一周的差值
@@ -37,7 +59,9 @@ export function useKPI(): KPIResult | null {
 
     if (!currentWeek) {
       // 如果没有选择具体周次，返回当周值
-      return kpiEngine.calculate(filteredData)
+      return kpiEngine.calculate(filteredData, {
+        annualTargetYuan: currentTargetYuan ?? undefined,
+      })
     }
 
     // 获取当前周的数据（已经是筛选后的数据）

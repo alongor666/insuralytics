@@ -49,6 +49,10 @@ import {
   type LossDimensionKey,
   type LossDimensionItem,
 } from '@/hooks/use-loss-dimension-analysis'
+import {
+  useMarginalContributionAnalysis,
+  type MarginalContributionItem,
+} from '@/hooks/use-marginal-contribution-analysis'
 
 // ============= 接口定义 =============
 
@@ -864,6 +868,171 @@ function LossTrendCard({
   )
 }
 
+// ============= 边贡分析专用组件 =============
+
+/**
+ * 边贡分析专用卡片组件
+ * 显示各业务类型的边贡率和变动成本率，带风险色彩和环比预警
+ */
+interface MarginRatioGridCardProps {
+  label: string
+  ratio: number | null
+  previous?: number | null
+  colorFn: (value: number | null | undefined) => ColorScale
+  isHigherBetter: boolean // true: 值越高越好；false: 值越低越好
+  compact?: boolean
+}
+
+function MarginRatioGridCard({
+  label,
+  ratio,
+  previous,
+  colorFn,
+  isHigherBetter,
+  compact = false,
+}: MarginRatioGridCardProps) {
+  const colorScale = colorFn(ratio)
+
+  // 计算环比变化
+  const hasComparison = ratio !== null && previous !== null && previous !== undefined
+  const change = hasComparison ? ratio - previous : null
+  const isWorsened = hasComparison
+    ? isHigherBetter
+      ? change! < 0
+      : change! > 0
+    : false
+
+  // 计算进度条值（限制在0-120之间）
+  const progressValue = ratio !== null ? Math.min(Math.max(ratio, 0), 120) : 0
+
+  return (
+    <div
+      className={cn(
+        'relative rounded-xl border border-slate-200 bg-white shadow-sm',
+        compact ? 'p-3' : 'p-4'
+      )}
+    >
+      {/* 环比恶化警示图标 */}
+      {isWorsened && (
+        <div className="absolute right-3 top-3 text-rose-500">
+          <TrendingDown className={compact ? 'h-4 w-4' : 'h-5 w-5'} />
+        </div>
+      )}
+
+      {/* 业务类型标签 */}
+      <p className="text-xs text-slate-500 mb-1">{label}</p>
+
+      {/* 比率值 */}
+      <p className={cn(compact ? 'text-xl' : 'text-2xl', 'font-bold', colorScale.text)}>
+        {ratio !== null ? formatPercent(ratio, 1) : '-'}
+      </p>
+
+      {/* 进度条 */}
+      <Progress
+        value={progressValue}
+        className={cn('mt-3', compact ? 'h-2' : 'h-2.5')}
+        indicatorClassName={colorScale.progress}
+      />
+    </div>
+  )
+}
+
+/**
+ * 边贡额趋势卡片（满期边贡额和单均边贡额）
+ */
+interface MarginAmountGridCardProps {
+  label: string
+  value: number | null
+  previous?: number | null
+  unit: string
+  decimals?: number
+  compact?: boolean
+}
+
+function MarginAmountGridCard({
+  label,
+  value,
+  previous,
+  unit,
+  decimals = 0,
+  compact = false,
+}: MarginAmountGridCardProps) {
+  // 计算环比变化
+  const hasComparison = value !== null && previous !== null && previous !== undefined
+  const change = hasComparison ? value - previous : null
+  const changePercent = hasComparison && previous !== 0
+    ? (change! / Math.abs(previous)) * 100
+    : null
+
+  const direction = change === null
+    ? 'flat'
+    : change > 0
+      ? 'up'
+      : change < 0
+        ? 'down'
+        : 'flat'
+
+  // 边贡额是"越高越好"，所以上升=好，下降=坏
+  const isBetter = direction === 'up'
+  const isWorsened = direction === 'down'
+
+  const changeColor = isBetter
+    ? 'text-emerald-600'
+    : isWorsened
+      ? 'text-rose-500'
+      : 'text-slate-500'
+
+  const directionIcon =
+    direction === 'up'
+      ? <ArrowUp className={compact ? 'h-3 w-3' : 'h-4 w-4'} />
+      : direction === 'down'
+        ? <ArrowDown className={compact ? 'h-3 w-3' : 'h-4 w-4'} />
+        : null
+
+  return (
+    <div
+      className={cn(
+        'rounded-xl border border-slate-200 bg-white shadow-sm',
+        compact ? 'p-3' : 'p-4'
+      )}
+    >
+      {/* 业务类型标签 */}
+      <p className="text-xs text-slate-500 mb-1">{label}</p>
+
+      {/* 当前值 */}
+      <p className={cn(compact ? 'text-xl' : 'text-2xl', 'font-bold text-slate-800')}>
+        {value !== null ? `${formatNumber(value, decimals)}` : '-'}
+      </p>
+
+      {/* 环比变化 */}
+      {hasComparison && change !== null ? (
+        <div className={cn('mt-1 flex items-center gap-1 text-sm font-medium', changeColor)}>
+          {directionIcon}
+          <span>
+            {formatSignedValue(change, decimals)}
+          </span>
+          {changePercent !== null && (
+            <span className="text-xs">
+              ({formatSignedValue(changePercent, 1)}%)
+            </span>
+          )}
+        </div>
+      ) : (
+        <div className="mt-1 text-xs text-slate-400">-</div>
+      )}
+
+      {/* 上期值 */}
+      <div className="mt-2 text-xs text-slate-500">
+        上期：{previous !== null && previous !== undefined
+          ? `${formatNumber(previous, decimals)}`
+          : '—'}
+      </div>
+    </div>
+  )
+}
+
+// ============= Tab组件Props =============
+
 interface TabContentProps {
   currentKpis: KPIResult | null
   compareKpis?: KPIResult | null
@@ -1125,54 +1294,146 @@ function LossAnalysisTab({ compact = false }: TabContentProps) {
   )
 }
 
-function ContributionAnalysisTab({ currentKpis, compareKpis, compact = false }: TabContentProps) {
-  const gridCols = compact ? 'grid-cols-4' : 'md:grid-cols-2 lg:grid-cols-4'
+function ContributionAnalysisTab({ compact = false }: TabContentProps) {
+  const items = useMarginalContributionAnalysis()
+  const hasData = items.length > 0
+
+  const gridCols = compact
+    ? 'grid-cols-2 md:grid-cols-3'
+    : 'sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4'
+
+  // 按满期边贡率降序排序（已在hook中完成）
+  const sortedByMarginRatio = items
+
+  // 按变动成本率升序排序（成本越低越好，所以升序）
+  const sortedByCostRatio = [...items].sort((a, b) => {
+    const aValue = a.variableCostRatio ?? Infinity
+    const bValue = b.variableCostRatio ?? Infinity
+    return aValue - bValue
+  })
+
+  // 按满期边贡额绝对变化排序（取前12个）
+  const sortedByMarginAmount = [...items]
+    .sort((a, b) => {
+      const aChange = a.previous
+        ? Math.abs(a.contributionMarginAmount - a.previous.contributionMarginAmount)
+        : -Infinity
+      const bChange = b.previous
+        ? Math.abs(b.contributionMarginAmount - b.previous.contributionMarginAmount)
+        : -Infinity
+      return bChange - aChange
+    })
+    .slice(0, 16)
+
+  // 按单均边贡额绝对变化排序（取前12个）
+  const sortedByAvgContribution = [...items]
+    .sort((a, b) => {
+      const aCurrent = a.averageContribution ?? 0
+      const bCurrent = b.averageContribution ?? 0
+      const aPrevious = a.previous?.averageContribution ?? 0
+      const bPrevious = b.previous?.averageContribution ?? 0
+      const aChange = Math.abs(aCurrent - aPrevious)
+      const bChange = Math.abs(bCurrent - bPrevious)
+      return bChange - aChange
+    })
+    .slice(0, 16)
 
   return (
-    <div className={cn('grid gap-4', gridCols)}>
-      <RatioOverviewCard
-        title="满期边贡率"
-        description="边际贡献占满期保费的比例"
-        ratio={currentKpis?.contribution_margin_ratio ?? null}
-        kpiId="contribution_margin_ratio"
-        currentKpis={currentKpis}
-        compareKpis={compareKpis}
-        colorFn={getDynamicColorByContributionMargin}
-        positiveChangeIs="increase"
-        compact={compact}
-      />
+    <div className="space-y-6">
+      <div>
+        <h2 className="text-base font-semibold text-slate-800">边贡分析</h2>
+        <p className="text-xs text-slate-500">
+          从利润率到利润额，再到单位利润质量的完整盈利能力诊断
+        </p>
+      </div>
 
-      <RatioOverviewCard
-        title="变动成本率"
-        description="费用率+赔付率，成本占比"
-        ratio={currentKpis?.variable_cost_ratio ?? null}
-        kpiId="variable_cost_ratio"
-        currentKpis={currentKpis}
-        compareKpis={compareKpis}
-        colorFn={getDynamicColorByVariableCostRatio}
-        positiveChangeIs="decrease"
-        compact={compact}
-      />
+      {hasData ? (
+        <>
+          {/* 满期边贡率分析 */}
+          <AnalysisSection
+            title="满期边贡率"
+            description="业务盈利能力的最终体现，越高越好"
+          >
+            <div className={cn('grid gap-3', gridCols)}>
+              {sortedByMarginRatio.map(item => (
+                <MarginRatioGridCard
+                  key={`margin-ratio-${item.key}`}
+                  label={item.label}
+                  ratio={item.contributionMarginRatio}
+                  previous={item.previous?.contributionMarginRatio}
+                  colorFn={getDynamicColorByContributionMargin}
+                  isHigherBetter={true}
+                  compact={compact}
+                />
+              ))}
+            </div>
+          </AnalysisSection>
 
-      <TrendAnalysisCard
-        title="满期边贡额"
-        description="边际贡献的绝对金额"
-        kpiId="contribution_margin_amount"
-        currentKpis={currentKpis}
-        compareKpis={compareKpis}
-        unit="万元"
-        compact={compact}
-      />
+          {/* 变动成本率分析 */}
+          <AnalysisSection
+            title="变动成本率"
+            description="业务的直接成本，越低越好"
+          >
+            <div className={cn('grid gap-3', gridCols)}>
+              {sortedByCostRatio.map(item => (
+                <MarginRatioGridCard
+                  key={`cost-ratio-${item.key}`}
+                  label={item.label}
+                  ratio={item.variableCostRatio}
+                  previous={item.previous?.variableCostRatio}
+                  colorFn={getDynamicColorByVariableCostRatio}
+                  isHigherBetter={false}
+                  compact={compact}
+                />
+              ))}
+            </div>
+          </AnalysisSection>
 
-      <TrendAnalysisCard
-        title="单均边贡额"
-        description="平均每张保单的边际贡献"
-        kpiId="average_contribution"
-        currentKpis={currentKpis}
-        compareKpis={compareKpis}
-        unit="元"
-        compact={compact}
-      />
+          {/* 满期边贡额分析 */}
+          <AnalysisSection
+            title="满期边贡额"
+            description="对比各业务线满期边贡额的环比变化"
+          >
+            <div className={cn('grid gap-3', gridCols)}>
+              {sortedByMarginAmount.map(item => (
+                <MarginAmountGridCard
+                  key={`margin-amount-${item.key}`}
+                  label={item.label}
+                  value={item.contributionMarginAmount}
+                  previous={item.previous?.contributionMarginAmount}
+                  unit=" 万元"
+                  decimals={2}
+                  compact={compact}
+                />
+              ))}
+            </div>
+          </AnalysisSection>
+
+          {/* 单均边贡额分析 */}
+          <AnalysisSection
+            title="单均边贡额"
+            description="对比各业务线单均边贡额的环比变化"
+          >
+            <div className={cn('grid gap-3', gridCols)}>
+              {sortedByAvgContribution.map(item => (
+                <MarginAmountGridCard
+                  key={`avg-contribution-${item.key}`}
+                  label={item.label}
+                  value={item.averageContribution}
+                  previous={item.previous?.averageContribution}
+                  unit=" 元"
+                  decimals={0}
+                  compact={compact}
+                />
+              ))}
+            </div>
+          </AnalysisSection>
+        </>
+      ) : (
+        <div className="rounded-xl border border-dashed border-slate-300 bg-slate-50 p-6 text-center text-sm text-slate-500">
+          当前筛选下暂无可用数据，请调整筛选条件后重试
+        </div>
+      )}
     </div>
   )
 }
