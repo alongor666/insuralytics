@@ -29,7 +29,11 @@ export function ProductFilter() {
     'businessTypes',
   ])
   const availableBusinessTypes = Array.from(
-    new Set(recordsForBusinessType.map(record => normalizeChineseText(record.business_type_category)))
+    new Set(
+      recordsForBusinessType.map(record =>
+        normalizeChineseText(record.business_type_category)
+      )
+    )
   )
     .filter(type => type)
     .sort()
@@ -68,10 +72,15 @@ export function ProductFilter() {
     filters.coverageTypes.length > 0
 
   return (
-    <FilterContainer title="产品维度" onReset={hasFilters ? handleReset : undefined}>
+    <FilterContainer
+      title="产品维度"
+      onReset={hasFilters ? handleReset : undefined}
+    >
       <div className="space-y-3">
         <div>
-          <label className="mb-1.5 block text-xs text-slate-600">保险类型</label>
+          <label className="mb-1.5 block text-xs text-slate-600">
+            保险类型
+          </label>
           <MultiSelectFilter
             options={availableInsuranceTypes}
             selectedValues={filters.insuranceTypes}
@@ -82,7 +91,9 @@ export function ProductFilter() {
           />
         </div>
         <div>
-          <label className="mb-1.5 block text-xs text-slate-600">业务类型</label>
+          <label className="mb-1.5 block text-xs text-slate-600">
+            业务类型
+          </label>
           <MultiSelectFilter
             options={availableBusinessTypes}
             selectedValues={filters.businessTypes}
@@ -93,7 +104,9 @@ export function ProductFilter() {
           />
         </div>
         <div>
-          <label className="mb-1.5 block text-xs text-slate-600">险别组合</label>
+          <label className="mb-1.5 block text-xs text-slate-600">
+            险别组合
+          </label>
           <MultiSelectFilter
             options={availableCoverageTypes}
             selectedValues={filters.coverageTypes}

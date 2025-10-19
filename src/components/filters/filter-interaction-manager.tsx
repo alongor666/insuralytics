@@ -140,7 +140,9 @@ export function FilterInteractionManager() {
 
       if (nextTrendWeeks.length === 0) {
         nextTrendWeeks =
-          filters.weeks.length > 0 ? [...filters.weeks].sort((a, b) => a - b) : []
+          filters.weeks.length > 0
+            ? [...filters.weeks].sort((a, b) => a - b)
+            : []
 
         if (nextTrendWeeks.length <= 1) {
           const relevantWeeksSet = new Set<number>()
@@ -152,9 +154,7 @@ export function FilterInteractionManager() {
               relevantWeeksSet.add(record.week_number)
             }
           })
-          const sortedWeeks = Array.from(relevantWeeksSet).sort(
-            (a, b) => a - b
-          )
+          const sortedWeeks = Array.from(relevantWeeksSet).sort((a, b) => a - b)
           nextTrendWeeks = sortedWeeks.slice(-12)
         }
       }

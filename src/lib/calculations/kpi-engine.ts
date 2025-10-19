@@ -92,7 +92,9 @@ function computeKPIs(
       : null
 
   const premiumPlanYuan =
-    premiumTargetYuan !== null ? premiumTargetYuan : aggregated.premium_plan_yuan
+    premiumTargetYuan !== null
+      ? premiumTargetYuan
+      : aggregated.premium_plan_yuan
 
   // ============= 率值指标计算 =============
 
@@ -217,7 +219,9 @@ function computeKPIs(
   const average_expense =
     average_expense_raw !== null ? Math.round(average_expense_raw) : null
   const average_contribution =
-    average_contribution_raw !== null ? Math.round(average_contribution_raw) : null
+    average_contribution_raw !== null
+      ? Math.round(average_contribution_raw)
+      : null
 
   // ============= 时间进度达成率 =============
   const premium_time_progress_achievement_rate =
@@ -356,21 +360,33 @@ export class KPIEngine {
 
     // 聚合当前周和前一周数据
     const currentAgg = aggregateData(currentWeekRecords)
-    const previousAgg = previousWeekRecords.length > 0
-      ? aggregateData(previousWeekRecords)
-      : this.getEmptyAggregation()
+    const previousAgg =
+      previousWeekRecords.length > 0
+        ? aggregateData(previousWeekRecords)
+        : this.getEmptyAggregation()
 
     // 计算增量聚合数据
     const incrementAgg: BaseAggregation = {
-      signed_premium_yuan: currentAgg.signed_premium_yuan - previousAgg.signed_premium_yuan,
-      matured_premium_yuan: currentAgg.matured_premium_yuan - previousAgg.matured_premium_yuan,
+      signed_premium_yuan:
+        currentAgg.signed_premium_yuan - previousAgg.signed_premium_yuan,
+      matured_premium_yuan:
+        currentAgg.matured_premium_yuan - previousAgg.matured_premium_yuan,
       policy_count: currentAgg.policy_count - previousAgg.policy_count,
-      claim_case_count: currentAgg.claim_case_count - previousAgg.claim_case_count,
-      reported_claim_payment_yuan: currentAgg.reported_claim_payment_yuan - previousAgg.reported_claim_payment_yuan,
-      expense_amount_yuan: currentAgg.expense_amount_yuan - previousAgg.expense_amount_yuan,
-      commercial_premium_before_discount_yuan: currentAgg.commercial_premium_before_discount_yuan - previousAgg.commercial_premium_before_discount_yuan,
-      premium_plan_yuan: currentAgg.premium_plan_yuan - previousAgg.premium_plan_yuan,
-      marginal_contribution_amount_yuan: currentAgg.marginal_contribution_amount_yuan - previousAgg.marginal_contribution_amount_yuan,
+      claim_case_count:
+        currentAgg.claim_case_count - previousAgg.claim_case_count,
+      reported_claim_payment_yuan:
+        currentAgg.reported_claim_payment_yuan -
+        previousAgg.reported_claim_payment_yuan,
+      expense_amount_yuan:
+        currentAgg.expense_amount_yuan - previousAgg.expense_amount_yuan,
+      commercial_premium_before_discount_yuan:
+        currentAgg.commercial_premium_before_discount_yuan -
+        previousAgg.commercial_premium_before_discount_yuan,
+      premium_plan_yuan:
+        currentAgg.premium_plan_yuan - previousAgg.premium_plan_yuan,
+      marginal_contribution_amount_yuan:
+        currentAgg.marginal_contribution_amount_yuan -
+        previousAgg.marginal_contribution_amount_yuan,
     }
 
     // 计算增量 KPI

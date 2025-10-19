@@ -45,7 +45,7 @@ function normalizeDimensionValue(
         ? { key: 'transferred', label: '过户车' }
         : { key: 'non_transferred', label: '非过户车' }
     default: {
-      const rawValue = (record as Record<string, unknown>)[dimensionKey]
+      const rawValue = (record as unknown as Record<string, unknown>)[dimensionKey]
       const isEmpty =
         rawValue === null ||
         rawValue === undefined ||
@@ -104,9 +104,7 @@ function aggregateByDimension(
 
   groups.forEach((group, key) => {
     const averagePremium =
-      group.policyCount > 0
-        ? group.signedPremiumYuan / group.policyCount
-        : null
+      group.policyCount > 0 ? group.signedPremiumYuan / group.policyCount : null
 
     const policyTarget =
       group.estimatedPolicyTarget > 0 ? group.estimatedPolicyTarget : null

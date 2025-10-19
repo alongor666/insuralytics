@@ -204,7 +204,7 @@ export function useFileUpload() {
             (progressInfo.percentage / 100) * (100 / totalFiles)
 
           // 估算内存使用量
-          const estimatedMemoryUsage = progressInfo.processedRows 
+          const estimatedMemoryUsage = progressInfo.processedRows
             ? Math.round((progressInfo.processedRows * 26 * 50) / (1024 * 1024)) // 假设每行26个字段，每字段平均50字符
             : undefined
 

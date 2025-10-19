@@ -88,7 +88,10 @@ interface AppState {
 
   // 新增：分层筛选操作
   updateGlobalFilters: (filters: Partial<FilterState>) => void
-  updateTabFilters: (tab: HierarchicalFilterState['activeTab'], filters: Partial<FilterState>) => void
+  updateTabFilters: (
+    tab: HierarchicalFilterState['activeTab'],
+    filters: Partial<FilterState>
+  ) => void
   setActiveTab: (tab: HierarchicalFilterState['activeTab']) => void
   getMergedFilters: () => FilterState // 合并全局和当前Tab筛选
   resetGlobalFilters: () => void
@@ -155,8 +158,12 @@ export const useAppStore = create<AppState>()(
             rawData: data.map(r => ({
               ...r,
               customer_category_3: normalizeChineseText(r.customer_category_3),
-              business_type_category: normalizeChineseText(r.business_type_category),
-              third_level_organization: normalizeChineseText(r.third_level_organization),
+              business_type_category: normalizeChineseText(
+                r.business_type_category
+              ),
+              third_level_organization: normalizeChineseText(
+                r.third_level_organization
+              ),
               terminal_source: normalizeChineseText(r.terminal_source),
             })),
             error: null,
@@ -212,12 +219,23 @@ export const useAppStore = create<AppState>()(
               ...state.filters,
               // 将输入的筛选值也做一次规范化，保证比较一致性
               ...newFilters,
-              organizations: (newFilters.organizations ?? state.filters.organizations).map(normalizeChineseText),
-              insuranceTypes: newFilters.insuranceTypes ?? state.filters.insuranceTypes,
-              businessTypes: (newFilters.businessTypes ?? state.filters.businessTypes).map(normalizeChineseText),
-              coverageTypes: newFilters.coverageTypes ?? state.filters.coverageTypes,
-              customerCategories: (newFilters.customerCategories ?? state.filters.customerCategories).map(normalizeChineseText),
-              terminalSources: (newFilters.terminalSources ?? state.filters.terminalSources).map(normalizeChineseText),
+              organizations: (
+                newFilters.organizations ?? state.filters.organizations
+              ).map(normalizeChineseText),
+              insuranceTypes:
+                newFilters.insuranceTypes ?? state.filters.insuranceTypes,
+              businessTypes: (
+                newFilters.businessTypes ?? state.filters.businessTypes
+              ).map(normalizeChineseText),
+              coverageTypes:
+                newFilters.coverageTypes ?? state.filters.coverageTypes,
+              customerCategories: (
+                newFilters.customerCategories ??
+                state.filters.customerCategories
+              ).map(normalizeChineseText),
+              terminalSources: (
+                newFilters.terminalSources ?? state.filters.terminalSources
+              ).map(normalizeChineseText),
             },
             // 筛选条件变化时清除缓存
             computedKPIs: new Map(),
@@ -409,7 +427,9 @@ export const useFilteredData = () => {
         // 空间筛选
         if (
           filters.organizations.length > 0 &&
-          !filters.organizations.includes(normalizeChineseText(record.third_level_organization))
+          !filters.organizations.includes(
+            normalizeChineseText(record.third_level_organization)
+          )
         ) {
           return false
         }
@@ -424,7 +444,9 @@ export const useFilteredData = () => {
 
         if (
           filters.businessTypes.length > 0 &&
-          !filters.businessTypes.includes(normalizeChineseText(record.business_type_category))
+          !filters.businessTypes.includes(
+            normalizeChineseText(record.business_type_category)
+          )
         ) {
           return false
         }
@@ -439,7 +461,9 @@ export const useFilteredData = () => {
         // 客户筛选
         if (
           filters.customerCategories.length > 0 &&
-          !filters.customerCategories.includes(normalizeChineseText(record.customer_category_3))
+          !filters.customerCategories.includes(
+            normalizeChineseText(record.customer_category_3)
+          )
         ) {
           return false
         }
@@ -458,7 +482,9 @@ export const useFilteredData = () => {
         // 渠道筛选
         if (
           filters.terminalSources.length > 0 &&
-          !filters.terminalSources.includes(normalizeChineseText(record.terminal_source))
+          !filters.terminalSources.includes(
+            normalizeChineseText(record.terminal_source)
+          )
         ) {
           return false
         }
@@ -516,7 +542,9 @@ export function filterRecordsWithExclusions(
     if (!excluded.has('organizations')) {
       if (
         filters.organizations.length > 0 &&
-        !filters.organizations.includes(normalizeChineseText(record.third_level_organization))
+        !filters.organizations.includes(
+          normalizeChineseText(record.third_level_organization)
+        )
       ) {
         return false
       }
@@ -535,7 +563,9 @@ export function filterRecordsWithExclusions(
     if (!excluded.has('businessTypes')) {
       if (
         filters.businessTypes.length > 0 &&
-        !filters.businessTypes.includes(normalizeChineseText(record.business_type_category))
+        !filters.businessTypes.includes(
+          normalizeChineseText(record.business_type_category)
+        )
       ) {
         return false
       }
@@ -554,7 +584,9 @@ export function filterRecordsWithExclusions(
     if (!excluded.has('customerCategories')) {
       if (
         filters.customerCategories.length > 0 &&
-        !filters.customerCategories.includes(normalizeChineseText(record.customer_category_3))
+        !filters.customerCategories.includes(
+          normalizeChineseText(record.customer_category_3)
+        )
       ) {
         return false
       }
@@ -577,7 +609,9 @@ export function filterRecordsWithExclusions(
     if (!excluded.has('terminalSources')) {
       if (
         filters.terminalSources.length > 0 &&
-        !filters.terminalSources.includes(normalizeChineseText(record.terminal_source))
+        !filters.terminalSources.includes(
+          normalizeChineseText(record.terminal_source)
+        )
       ) {
         return false
       }

@@ -46,7 +46,10 @@ function calculateIncrement<T extends string>(
   current: Map<T, { signed: number; matured: number; count: number }>,
   previous: Map<T, { signed: number; matured: number; count: number }>
 ): Map<T, { signed: number; matured: number; count: number }> {
-  const result = new Map<T, { signed: number; matured: number; count: number }>()
+  const result = new Map<
+    T,
+    { signed: number; matured: number; count: number }
+  >()
 
   current.forEach((currVal, key) => {
     const prevVal = previous.get(key) || { signed: 0, matured: 0, count: 0 }
@@ -68,9 +71,8 @@ function usePreviousWeekData(): InsuranceRecord[] {
   const filters = useAppStore(state => state.filters)
 
   return useMemo(() => {
-    const currentWeek = filters.viewMode === 'single'
-      ? filters.singleModeWeek
-      : null
+    const currentWeek =
+      filters.viewMode === 'single' ? filters.singleModeWeek : null
 
     if (!currentWeek) return []
 
@@ -83,34 +85,65 @@ function usePreviousWeekData(): InsuranceRecord[] {
       }
 
       // 应用其他筛选条件
-      if (filters.years.length > 0 && !filters.years.includes(record.policy_start_year)) {
+      if (
+        filters.years.length > 0 &&
+        !filters.years.includes(record.policy_start_year)
+      ) {
         return false
       }
-      if (filters.organizations.length > 0 && !filters.organizations.includes(record.third_level_organization)) {
+      if (
+        filters.organizations.length > 0 &&
+        !filters.organizations.includes(record.third_level_organization)
+      ) {
         return false
       }
-      if (filters.insuranceTypes.length > 0 && !filters.insuranceTypes.includes(record.insurance_type)) {
+      if (
+        filters.insuranceTypes.length > 0 &&
+        !filters.insuranceTypes.includes(record.insurance_type)
+      ) {
         return false
       }
-      if (filters.businessTypes.length > 0 && !filters.businessTypes.includes(record.business_type_category)) {
+      if (
+        filters.businessTypes.length > 0 &&
+        !filters.businessTypes.includes(record.business_type_category)
+      ) {
         return false
       }
-      if (filters.coverageTypes.length > 0 && !filters.coverageTypes.includes(record.coverage_type)) {
+      if (
+        filters.coverageTypes.length > 0 &&
+        !filters.coverageTypes.includes(record.coverage_type)
+      ) {
         return false
       }
-      if (filters.customerCategories.length > 0 && !filters.customerCategories.includes(record.customer_category_3)) {
+      if (
+        filters.customerCategories.length > 0 &&
+        !filters.customerCategories.includes(record.customer_category_3)
+      ) {
         return false
       }
-      if (filters.vehicleGrades.length > 0 && record.vehicle_insurance_grade && !filters.vehicleGrades.includes(record.vehicle_insurance_grade)) {
+      if (
+        filters.vehicleGrades.length > 0 &&
+        record.vehicle_insurance_grade &&
+        !filters.vehicleGrades.includes(record.vehicle_insurance_grade)
+      ) {
         return false
       }
-      if (filters.terminalSources.length > 0 && !filters.terminalSources.includes(record.terminal_source)) {
+      if (
+        filters.terminalSources.length > 0 &&
+        !filters.terminalSources.includes(record.terminal_source)
+      ) {
         return false
       }
-      if (filters.isNewEnergy !== null && record.is_new_energy_vehicle !== filters.isNewEnergy) {
+      if (
+        filters.isNewEnergy !== null &&
+        record.is_new_energy_vehicle !== filters.isNewEnergy
+      ) {
         return false
       }
-      if (filters.renewalStatuses.length > 0 && !filters.renewalStatuses.includes(record.renewal_status)) {
+      if (
+        filters.renewalStatuses.length > 0 &&
+        !filters.renewalStatuses.includes(record.renewal_status)
+      ) {
         return false
       }
 

@@ -27,7 +27,9 @@ export function CompactOrganizationFilter() {
   )
   const availableOrganizations = Array.from(
     new Set(
-      recordsForOrganizations.map(record => normalizeChineseText(record.third_level_organization))
+      recordsForOrganizations.map(record =>
+        normalizeChineseText(record.third_level_organization)
+      )
     )
   )
     .filter(org => org) // 过滤掉空值

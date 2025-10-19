@@ -33,17 +33,23 @@ export function normalizeChineseText(input: string | null | undefined): string {
 }
 
 // 记录文本字段规范化（仅对易乱码的中文维度）
-export function normalizeRecordTextFields<T extends {
-  customer_category_3?: string
-  business_type_category?: string
-  third_level_organization?: string
-  terminal_source?: string
-}>(record: T): T {
+export function normalizeRecordTextFields<
+  T extends {
+    customer_category_3?: string
+    business_type_category?: string
+    third_level_organization?: string
+    terminal_source?: string
+  },
+>(record: T): T {
   return {
     ...record,
     customer_category_3: normalizeChineseText(record.customer_category_3 ?? ''),
-    business_type_category: normalizeChineseText(record.business_type_category ?? ''),
-    third_level_organization: normalizeChineseText(record.third_level_organization ?? ''),
+    business_type_category: normalizeChineseText(
+      record.business_type_category ?? ''
+    ),
+    third_level_organization: normalizeChineseText(
+      record.third_level_organization ?? ''
+    ),
     terminal_source: normalizeChineseText(record.terminal_source ?? ''),
   }
 }

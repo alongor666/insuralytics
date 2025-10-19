@@ -24,7 +24,10 @@ const TAB_ITEMS: Array<{ value: AnalysisTabValue; label: string }> = [
 
 export function AnalysisTabs({ active, onChange }: AnalysisTabsProps) {
   return (
-    <Tabs value={active} onValueChange={value => onChange(value as AnalysisTabValue)}>
+    <Tabs
+      value={active}
+      onValueChange={value => onChange(value as AnalysisTabValue)}
+    >
       <TabsList>
         {TAB_ITEMS.map(item => (
           <TabsTrigger key={item.value} value={item.value}>

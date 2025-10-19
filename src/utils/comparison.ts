@@ -3,7 +3,7 @@
  * 用于计算KPI的环比变化、判断变化方向的好坏
  */
 
-import type { KPIValues } from '@/types/insurance'
+import type { KPIResult } from '@/types/insurance'
 
 export interface ComparisonMetrics {
   current: number | null
@@ -63,9 +63,9 @@ const KPI_BETTER_DIRECTION: Record<string, boolean> = {
  * @returns ComparisonMetrics 环比指标对象
  */
 export function getComparisonMetrics(
-  kpiId: keyof KPIValues,
-  currentKpis: KPIValues | null | undefined,
-  previousKpis: KPIValues | null | undefined
+  kpiId: keyof KPIResult,
+  currentKpis: KPIResult | null | undefined,
+  previousKpis: KPIResult | null | undefined
 ): ComparisonMetrics {
   // 安全获取数值
   const current = currentKpis?.[kpiId] ?? null
@@ -86,7 +86,8 @@ export function getComparisonMetrics(
 
   // 计算绝对变化和百分比变化
   const absoluteChange = current - previous
-  const percentChange = previous !== 0 ? (absoluteChange / Math.abs(previous)) * 100 : null
+  const percentChange =
+    previous !== 0 ? (absoluteChange / Math.abs(previous)) * 100 : null
 
   // 判断变化方向
   let direction: 'up' | 'down' | 'flat' = 'flat'
@@ -126,22 +127,27 @@ export function getComparisonMetrics(
  * @returns 环比指标数组，按绝对变化值降序排序
  */
 export function getBatchComparisonMetrics(
-  kpiId: keyof KPIValues,
-  currentData: Array<{ dimension: string; kpis: KPIValues }>,
-  previousData: Array<{ dimension: string; kpis: KPIValues }>,
+  kpiId: keyof KPIResult,
+  currentData: Array<{ dimension: string; kpis: KPIResult }>,
+  previousData: Array<{ dimension: string; kpis: KPIResult }>
 ): Array<{ dimension: string; comparison: ComparisonMetrics }> {
-  const results: Array<{ dimension: string; comparison: ComparisonMetrics }> = []
+  const results: Array<{ dimension: string; comparison: ComparisonMetrics }> =
+    []
 
   // 创建对比期数据的快速查找Map
-  const previousMap = new Map<string, KPIValues>()
-  previousData.forEach((item) => {
+  const previousMap = new Map<string, KPIResult>()
+  previousData.forEach(item => {
     previousMap.set(item.dimension, item.kpis)
   })
 
   // 遍历当前期数据，计算环比
-  currentData.forEach((currentItem) => {
+  currentData.forEach(currentItem => {
     const previousKpis = previousMap.get(currentItem.dimension)
-    const comparison = getComparisonMetrics(kpiId, currentItem.kpis, previousKpis)
+    const comparison = getComparisonMetrics(
+      kpiId,
+      currentItem.kpis,
+      previousKpis
+    )
 
     results.push({
       dimension: currentItem.dimension,

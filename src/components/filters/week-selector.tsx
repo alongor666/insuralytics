@@ -82,9 +82,7 @@ export function WeekSelector({ availableWeeks }: WeekSelectorProps) {
 
   const handleInvertSelection = () => {
     const allWeeks = availableWeeks.map(w => w.week)
-    const unselected = allWeeks.filter(
-      w => !filters.trendModeWeeks.includes(w)
-    )
+    const unselected = allWeeks.filter(w => !filters.trendModeWeeks.includes(w))
     updateFilters({
       trendModeWeeks: unselected,
       weeks: unselected,

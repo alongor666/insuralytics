@@ -34,7 +34,9 @@ export interface PDFExportOptions {
 /**
  * 导出 PDF 报告
  */
-export async function exportPDFReport(options: PDFExportOptions): Promise<void> {
+export async function exportPDFReport(
+  options: PDFExportOptions
+): Promise<void> {
   const { config, kpis, filters, insights } = options
 
   // 创建 PDF 文档 (A4 尺寸)
@@ -59,7 +61,9 @@ export async function exportPDFReport(options: PDFExportOptions): Promise<void> 
   if (config.subtitle) {
     pdf.setFontSize(14)
     pdf.setFont('helvetica', 'normal')
-    pdf.text(config.subtitle, pageWidth / 2, yPosition + 45, { align: 'center' })
+    pdf.text(config.subtitle, pageWidth / 2, yPosition + 45, {
+      align: 'center',
+    })
   }
 
   // 生成日期
@@ -69,11 +73,15 @@ export async function exportPDFReport(options: PDFExportOptions): Promise<void> 
     day: 'numeric',
   })
   pdf.setFontSize(10)
-  pdf.text(`生成日期：${reportDate}`, pageWidth / 2, yPosition + 60, { align: 'center' })
+  pdf.text(`生成日期：${reportDate}`, pageWidth / 2, yPosition + 60, {
+    align: 'center',
+  })
 
   // 作者
   if (config.author) {
-    pdf.text(`报告人：${config.author}`, pageWidth / 2, yPosition + 70, { align: 'center' })
+    pdf.text(`报告人：${config.author}`, pageWidth / 2, yPosition + 70, {
+      align: 'center',
+    })
   }
 
   // 添加装饰线
@@ -101,8 +109,10 @@ export async function exportPDFReport(options: PDFExportOptions): Promise<void> 
 
     // 时间范围
     if (filters.years.length > 0 || filters.weeks.length > 0) {
-      const yearsText = filters.years.length > 0 ? `${filters.years.join(', ')}年` : '全部'
-      const weeksText = filters.weeks.length > 0 ? `第${filters.weeks.join(', ')}周` : '全部'
+      const yearsText =
+        filters.years.length > 0 ? `${filters.years.join(', ')}年` : '全部'
+      const weeksText =
+        filters.weeks.length > 0 ? `第${filters.weeks.join(', ')}周` : '全部'
       pdf.text(`时间范围：${yearsText}，${weeksText}`, margin, yPosition)
       yPosition += 6
     }
@@ -115,7 +125,11 @@ export async function exportPDFReport(options: PDFExportOptions): Promise<void> 
 
     // 产品
     if (filters.insuranceTypes.length > 0) {
-      pdf.text(`保险类型：${filters.insuranceTypes.join('、')}`, margin, yPosition)
+      pdf.text(
+        `保险类型：${filters.insuranceTypes.join('、')}`,
+        margin,
+        yPosition
+      )
       yPosition += 6
     }
 
@@ -194,7 +208,11 @@ export async function exportPDFReport(options: PDFExportOptions): Promise<void> 
   }
 
   // ===== 图表 =====
-  if (config.includeCharts && config.chartElements && config.chartElements.length > 0) {
+  if (
+    config.includeCharts &&
+    config.chartElements &&
+    config.chartElements.length > 0
+  ) {
     for (const elementId of config.chartElements) {
       const element = document.getElementById(elementId)
       if (!element) {
@@ -288,7 +306,10 @@ export async function exportPDFReport(options: PDFExportOptions): Promise<void> 
 /**
  * 导出简化版 PDF（仅 KPI）
  */
-export async function exportSimplePDFReport(kpis: KPIResult, filters?: FilterState): Promise<void> {
+export async function exportSimplePDFReport(
+  kpis: KPIResult,
+  filters?: FilterState
+): Promise<void> {
   const config: PDFReportConfig = {
     title: '车险业务分析报告',
     subtitle: '核心指标概览',

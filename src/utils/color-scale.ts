@@ -24,7 +24,9 @@ export interface ColorScale {
  * - 危险（80-90%）：进度明显落后，橙色
  * - 高危（<80%）：进度严重落后，红色
  */
-export function getDynamicColorByPremiumProgress(rate: number | null | undefined): ColorScale {
+export function getDynamicColorByPremiumProgress(
+  rate: number | null | undefined
+): ColorScale {
   if (rate === null || rate === undefined || isNaN(rate)) {
     return {
       text: 'text-slate-600',
@@ -32,7 +34,7 @@ export function getDynamicColorByPremiumProgress(rate: number | null | undefined
       progress: 'bg-slate-400',
       border: 'border-slate-300',
       level: 'medium',
-      label: '无数据'
+      label: '无数据',
     }
   }
 
@@ -43,7 +45,7 @@ export function getDynamicColorByPremiumProgress(rate: number | null | undefined
       progress: 'bg-green-600',
       border: 'border-green-300',
       level: 'excellent',
-      label: '卓越'
+      label: '卓越',
     }
   }
 
@@ -54,7 +56,7 @@ export function getDynamicColorByPremiumProgress(rate: number | null | undefined
       progress: 'bg-green-500',
       border: 'border-green-200',
       level: 'good',
-      label: '健康'
+      label: '健康',
     }
   }
 
@@ -65,7 +67,7 @@ export function getDynamicColorByPremiumProgress(rate: number | null | undefined
       progress: 'bg-yellow-500',
       border: 'border-yellow-200',
       level: 'warning',
-      label: '预警'
+      label: '预警',
     }
   }
 
@@ -76,7 +78,7 @@ export function getDynamicColorByPremiumProgress(rate: number | null | undefined
       progress: 'bg-orange-500',
       border: 'border-orange-200',
       level: 'warning',
-      label: '危险'
+      label: '危险',
     }
   }
 
@@ -86,7 +88,7 @@ export function getDynamicColorByPremiumProgress(rate: number | null | undefined
     progress: 'bg-red-500',
     border: 'border-red-200',
     level: 'danger',
-    label: '高危'
+    label: '高危',
   }
 }
 
@@ -102,7 +104,9 @@ export function getDynamicColorByPremiumProgress(rate: number | null | undefined
  * - 预警（70-80%）：赔付风险偏高，黄色
  * - 高危（>80%）：赔付风险严重，红色
  */
-export function getDynamicColorByLossRatio(ratio: number | null | undefined): ColorScale {
+export function getDynamicColorByLossRatio(
+  ratio: number | null | undefined
+): ColorScale {
   if (ratio === null || ratio === undefined || isNaN(ratio)) {
     return {
       text: 'text-slate-600',
@@ -110,7 +114,7 @@ export function getDynamicColorByLossRatio(ratio: number | null | undefined): Co
       progress: 'bg-slate-400',
       border: 'border-slate-300',
       level: 'medium',
-      label: '无数据'
+      label: '无数据',
     }
   }
 
@@ -121,7 +125,7 @@ export function getDynamicColorByLossRatio(ratio: number | null | undefined): Co
       progress: 'bg-green-600',
       border: 'border-green-300',
       level: 'excellent',
-      label: '优秀'
+      label: '优秀',
     }
   }
 
@@ -132,7 +136,7 @@ export function getDynamicColorByLossRatio(ratio: number | null | undefined): Co
       progress: 'bg-green-500',
       border: 'border-green-200',
       level: 'good',
-      label: '良好'
+      label: '良好',
     }
   }
 
@@ -143,7 +147,7 @@ export function getDynamicColorByLossRatio(ratio: number | null | undefined): Co
       progress: 'bg-blue-500',
       border: 'border-blue-200',
       level: 'medium',
-      label: '中等'
+      label: '中等',
     }
   }
 
@@ -154,7 +158,7 @@ export function getDynamicColorByLossRatio(ratio: number | null | undefined): Co
       progress: 'bg-yellow-500',
       border: 'border-yellow-200',
       level: 'warning',
-      label: '预警'
+      label: '预警',
     }
   }
 
@@ -164,7 +168,7 @@ export function getDynamicColorByLossRatio(ratio: number | null | undefined): Co
     progress: 'bg-red-500',
     border: 'border-red-200',
     level: 'danger',
-    label: '高危'
+    label: '高危',
   }
 }
 
@@ -181,7 +185,9 @@ export function getDynamicColorByLossRatio(ratio: number | null | undefined): Co
  * - 较差（0-4%）：橙色 #F57C00
  * - 严重（<0%）：红色 #D32F2F
  */
-export function getDynamicColorByContributionMargin(ratio: number | null | undefined): ColorScale {
+export function getDynamicColorByContributionMargin(
+  ratio: number | null | undefined
+): ColorScale {
   if (ratio === null || ratio === undefined || isNaN(ratio)) {
     return {
       text: 'text-slate-600',
@@ -189,7 +195,7 @@ export function getDynamicColorByContributionMargin(ratio: number | null | undef
       progress: 'bg-slate-400',
       border: 'border-slate-300',
       level: 'medium',
-      label: '无数据'
+      label: '无数据',
     }
   }
 
@@ -200,7 +206,7 @@ export function getDynamicColorByContributionMargin(ratio: number | null | undef
       progress: 'bg-green-600',
       border: 'border-green-300',
       level: 'excellent',
-      label: '优秀'
+      label: '优秀',
     }
   }
 
@@ -211,7 +217,7 @@ export function getDynamicColorByContributionMargin(ratio: number | null | undef
       progress: 'bg-green-500',
       border: 'border-green-200',
       level: 'good',
-      label: '良好'
+      label: '良好',
     }
   }
 
@@ -222,7 +228,7 @@ export function getDynamicColorByContributionMargin(ratio: number | null | undef
       progress: 'bg-blue-500',
       border: 'border-blue-200',
       level: 'medium',
-      label: '中等'
+      label: '中等',
     }
   }
 
@@ -233,7 +239,7 @@ export function getDynamicColorByContributionMargin(ratio: number | null | undef
       progress: 'bg-yellow-500',
       border: 'border-yellow-200',
       level: 'warning',
-      label: '一般'
+      label: '一般',
     }
   }
 
@@ -244,7 +250,7 @@ export function getDynamicColorByContributionMargin(ratio: number | null | undef
       progress: 'bg-orange-500',
       border: 'border-orange-200',
       level: 'warning',
-      label: '较差'
+      label: '较差',
     }
   }
 
@@ -254,7 +260,7 @@ export function getDynamicColorByContributionMargin(ratio: number | null | undef
     progress: 'bg-red-500',
     border: 'border-red-200',
     level: 'danger',
-    label: '严重'
+    label: '严重',
   }
 }
 
@@ -270,7 +276,9 @@ export function getDynamicColorByContributionMargin(ratio: number | null | undef
  * - 预警（85-95%）：成本偏高，黄色
  * - 高危（>95%）：成本严重超标，红色
  */
-export function getDynamicColorByVariableCostRatio(ratio: number | null | undefined): ColorScale {
+export function getDynamicColorByVariableCostRatio(
+  ratio: number | null | undefined
+): ColorScale {
   if (ratio === null || ratio === undefined || isNaN(ratio)) {
     return {
       text: 'text-slate-600',
@@ -278,7 +286,7 @@ export function getDynamicColorByVariableCostRatio(ratio: number | null | undefi
       progress: 'bg-slate-400',
       border: 'border-slate-300',
       level: 'medium',
-      label: '无数据'
+      label: '无数据',
     }
   }
 
@@ -289,7 +297,7 @@ export function getDynamicColorByVariableCostRatio(ratio: number | null | undefi
       progress: 'bg-green-600',
       border: 'border-green-300',
       level: 'excellent',
-      label: '优秀'
+      label: '优秀',
     }
   }
 
@@ -300,7 +308,7 @@ export function getDynamicColorByVariableCostRatio(ratio: number | null | undefi
       progress: 'bg-green-500',
       border: 'border-green-200',
       level: 'good',
-      label: '良好'
+      label: '良好',
     }
   }
 
@@ -311,7 +319,7 @@ export function getDynamicColorByVariableCostRatio(ratio: number | null | undefi
       progress: 'bg-blue-500',
       border: 'border-blue-200',
       level: 'medium',
-      label: '中等'
+      label: '中等',
     }
   }
 
@@ -322,7 +330,7 @@ export function getDynamicColorByVariableCostRatio(ratio: number | null | undefi
       progress: 'bg-yellow-500',
       border: 'border-yellow-200',
       level: 'warning',
-      label: '预警'
+      label: '预警',
     }
   }
 
@@ -332,7 +340,7 @@ export function getDynamicColorByVariableCostRatio(ratio: number | null | undefi
     progress: 'bg-red-500',
     border: 'border-red-200',
     level: 'danger',
-    label: '高危'
+    label: '高危',
   }
 }
 
@@ -343,7 +351,11 @@ export function getDynamicColorByVariableCostRatio(ratio: number | null | undefi
  * @returns ColorScale 色彩对象
  */
 export function getDynamicColorByKPI(
-  kpiType: 'premium_progress' | 'loss_ratio' | 'contribution_margin' | 'variable_cost',
+  kpiType:
+    | 'premium_progress'
+    | 'loss_ratio'
+    | 'contribution_margin'
+    | 'variable_cost',
   value: number | null | undefined
 ): ColorScale {
   switch (kpiType) {
@@ -362,7 +374,7 @@ export function getDynamicColorByKPI(
         progress: 'bg-slate-400',
         border: 'border-slate-300',
         level: 'medium',
-        label: '未知'
+        label: '未知',
       }
   }
 }

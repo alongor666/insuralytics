@@ -98,15 +98,22 @@ export function CompactKPIDashboard({
       key: 'contribution_margin_amount',
       title: '满期边际贡献额',
       unit: '万',
-      formatter: val => (val !== null && val !== undefined && !isNaN(val) ? formatCurrency(val) : '-'),
-      getColor: val => (val !== null && val >= 0 ? 'text-green-600' : 'text-red-600'),
+      formatter: val =>
+        val !== null && val !== undefined && !isNaN(val)
+          ? formatCurrency(val)
+          : '-',
+      getColor: val =>
+        val !== null && val >= 0 ? 'text-green-600' : 'text-red-600',
       decimals: 0,
     },
     {
       key: 'signed_premium',
       title: '签单保费',
       unit: '万',
-      formatter: val => (val !== null && val !== undefined && !isNaN(val) ? formatCurrency(val) : '-'),
+      formatter: val =>
+        val !== null && val !== undefined && !isNaN(val)
+          ? formatCurrency(val)
+          : '-',
       getColor: () => 'text-slate-700',
       decimals: 0,
     },
@@ -114,7 +121,10 @@ export function CompactKPIDashboard({
       key: 'reported_claim_payment',
       title: '已报告赔款',
       unit: '万',
-      formatter: val => (val !== null && val !== undefined && !isNaN(val) ? formatCurrency(val) : '-'),
+      formatter: val =>
+        val !== null && val !== undefined && !isNaN(val)
+          ? formatCurrency(val)
+          : '-',
       getColor: () => 'text-slate-700',
       decimals: 0,
     },
@@ -122,7 +132,10 @@ export function CompactKPIDashboard({
       key: 'expense_amount',
       title: '费用额',
       unit: '万',
-      formatter: val => (val !== null && val !== undefined && !isNaN(val) ? formatCurrency(val) : '-'),
+      formatter: val =>
+        val !== null && val !== undefined && !isNaN(val)
+          ? formatCurrency(val)
+          : '-',
       getColor: () => 'text-slate-700',
       decimals: 0,
     },
@@ -173,7 +186,10 @@ export function CompactKPIDashboard({
       key: 'policy_count',
       title: '保单件数(件)',
       unit: '',
-      formatter: val => (val !== null && val !== undefined && !isNaN(val) ? val.toLocaleString('zh-CN') : '-'),
+      formatter: val =>
+        val !== null && val !== undefined && !isNaN(val)
+          ? val.toLocaleString('zh-CN')
+          : '-',
       getColor: () => 'text-slate-700',
       decimals: 0,
     },
@@ -185,7 +201,10 @@ export function CompactKPIDashboard({
       key: 'claim_case_count',
       title: '赔案件数(件)',
       unit: '',
-      formatter: val => (val !== null && val !== undefined && !isNaN(val) ? val.toLocaleString('zh-CN') : '-'),
+      formatter: val =>
+        val !== null && val !== undefined && !isNaN(val)
+          ? val.toLocaleString('zh-CN')
+          : '-',
       getColor: () => 'text-slate-700',
       decimals: 0,
     },
@@ -193,7 +212,10 @@ export function CompactKPIDashboard({
       key: 'average_premium',
       title: '单均保费(元)',
       unit: '',
-      formatter: val => (val !== null && val !== undefined && !isNaN(val) ? Math.round(val).toLocaleString('zh-CN') : '-'),
+      formatter: val =>
+        val !== null && val !== undefined && !isNaN(val)
+          ? Math.round(val).toLocaleString('zh-CN')
+          : '-',
       getColor: () => 'text-slate-700',
       decimals: 0,
     },
@@ -201,7 +223,10 @@ export function CompactKPIDashboard({
       key: 'average_claim',
       title: '案均赔款(元)',
       unit: '',
-      formatter: val => (val !== null && val !== undefined && !isNaN(val) ? Math.round(val).toLocaleString('zh-CN') : '-'),
+      formatter: val =>
+        val !== null && val !== undefined && !isNaN(val)
+          ? Math.round(val).toLocaleString('zh-CN')
+          : '-',
       getColor: () => 'text-slate-700',
       decimals: 0,
     },
@@ -209,7 +234,10 @@ export function CompactKPIDashboard({
       key: 'average_expense',
       title: '单均费用(元)',
       unit: '',
-      formatter: val => (val !== null && val !== undefined && !isNaN(val) ? Math.round(val).toLocaleString('zh-CN') : '-'),
+      formatter: val =>
+        val !== null && val !== undefined && !isNaN(val)
+          ? Math.round(val).toLocaleString('zh-CN')
+          : '-',
       getColor: () => 'text-slate-700',
       decimals: 0,
     },
@@ -220,7 +248,12 @@ export function CompactKPIDashboard({
     current: number | null,
     previous: number | null,
     decimals: number = 2
-  ): { delta: string; percent: string; direction: 'up' | 'down' | 'flat'; color: string } => {
+  ): {
+    delta: string
+    percent: string
+    direction: 'up' | 'down' | 'flat'
+    color: string
+  } => {
     if (
       current === null ||
       previous === null ||
@@ -229,7 +262,12 @@ export function CompactKPIDashboard({
       isNaN(current) ||
       isNaN(previous)
     ) {
-      return { delta: '-', percent: '-', direction: 'flat', color: 'text-slate-400' }
+      return {
+        delta: '-',
+        percent: '-',
+        direction: 'flat',
+        color: 'text-slate-400',
+      }
     }
 
     const delta = current - previous
@@ -237,10 +275,16 @@ export function CompactKPIDashboard({
 
     const direction = delta > 0 ? 'up' : delta < 0 ? 'down' : 'flat'
     const color =
-      direction === 'up' ? 'text-green-600' : direction === 'down' ? 'text-red-600' : 'text-slate-500'
+      direction === 'up'
+        ? 'text-green-600'
+        : direction === 'down'
+          ? 'text-red-600'
+          : 'text-slate-500'
 
-    const deltaStr = delta >= 0 ? `+${delta.toFixed(decimals)}` : delta.toFixed(decimals)
-    const percentStr = percent >= 0 ? `+${percent.toFixed(1)}%` : `${percent.toFixed(1)}%`
+    const deltaStr =
+      delta >= 0 ? `+${delta.toFixed(decimals)}` : delta.toFixed(decimals)
+    const percentStr =
+      percent >= 0 ? `+${percent.toFixed(1)}%` : `${percent.toFixed(1)}%`
 
     return { delta: deltaStr, percent: percentStr, direction, color }
   }
@@ -282,7 +326,9 @@ export function CompactKPIDashboard({
   const renderKPICell = (config: KPIConfig) => {
     const value = kpiData[config.key] as number | null
     const formattedValue = config.formatter(value)
-    const compareValue = compareData ? (compareData[config.key] as number | null) : null
+    const compareValue = compareData
+      ? (compareData[config.key] as number | null)
+      : null
     const changeInfo = getChangeInfo(value, compareValue, config.decimals)
 
     return (
@@ -300,10 +346,17 @@ export function CompactKPIDashboard({
 
         {/* 当前值 */}
         <div className="mb-1 flex items-baseline gap-1">
-          <span className={cn('text-xl font-bold tabular-nums', config.getColor(value))}>
+          <span
+            className={cn(
+              'text-xl font-bold tabular-nums',
+              config.getColor(value)
+            )}
+          >
             {formattedValue}
           </span>
-          {config.unit && <span className="text-xs text-slate-500">{config.unit}</span>}
+          {config.unit && (
+            <span className="text-xs text-slate-500">{config.unit}</span>
+          )}
         </div>
 
         {/* 环比信息 */}
@@ -311,8 +364,12 @@ export function CompactKPIDashboard({
           <div className="flex items-center gap-2 text-xs">
             {/* 环比增量 */}
             <div className="flex items-center gap-0.5">
-              {changeInfo.direction === 'up' && <TrendingUp className="h-3 w-3" />}
-              {changeInfo.direction === 'down' && <TrendingDown className="h-3 w-3" />}
+              {changeInfo.direction === 'up' && (
+                <TrendingUp className="h-3 w-3" />
+              )}
+              {changeInfo.direction === 'down' && (
+                <TrendingDown className="h-3 w-3" />
+              )}
               {changeInfo.direction === 'flat' && <Minus className="h-3 w-3" />}
               <span className={cn('font-medium', changeInfo.color)}>
                 {changeInfo.delta}

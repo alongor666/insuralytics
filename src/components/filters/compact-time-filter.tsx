@@ -91,7 +91,9 @@ export function CompactTimeFilter() {
 
   const handleInvertYears = () => {
     if (availableYears.length === 0) return
-    const inverted = availableYears.filter(year => !filters.years.includes(year))
+    const inverted = availableYears.filter(
+      year => !filters.years.includes(year)
+    )
     updateFilters({ years: inverted })
   }
 
@@ -103,7 +105,10 @@ export function CompactTimeFilter() {
   const handleSelectAllWeeks = () => {
     if (availableWeeks.length === 0) return
     if (isSingleMode) return
-    updateFilters({ trendModeWeeks: [...availableWeeks], weeks: [...availableWeeks] })
+    updateFilters({
+      trendModeWeeks: [...availableWeeks],
+      weeks: [...availableWeeks],
+    })
   }
 
   const handleInvertWeeks = () => {

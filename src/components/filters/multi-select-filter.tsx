@@ -59,7 +59,9 @@ export function MultiSelectFilter({
 
   const handleInvertSelection = () => {
     if (optionValues.length === 0) return
-    const inverted = optionValues.filter(value => !selectedValues.includes(value))
+    const inverted = optionValues.filter(
+      value => !selectedValues.includes(value)
+    )
     onChange(inverted)
   }
 
@@ -94,10 +96,7 @@ export function MultiSelectFilter({
           <CommandEmpty>{emptyText}</CommandEmpty>
           <CommandGroup className="max-h-64 overflow-auto">
             <CommandItem onSelect={handleSelectAll} className="cursor-pointer">
-              <Checkbox
-                checked={isAllSelected}
-                className="mr-2"
-              />
+              <Checkbox checked={isAllSelected} className="mr-2" />
               <span className="font-medium">全选</span>
             </CommandItem>
             {showBulkActions && (

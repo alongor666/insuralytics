@@ -1,13 +1,13 @@
-"use client"
+'use client'
 
-import { SlidersHorizontal } from "lucide-react"
-import { DataViewSelector } from "@/components/filters/data-view-selector"
-import { CompactTimeFilter } from "@/components/filters/compact-time-filter"
-import { CompactOrganizationFilter } from "@/components/filters/compact-organization-filter"
-import { DataExport } from "@/components/features/data-export"
-import { PDFReportExport } from "@/components/features/pdf-report-export"
-import { useAppStore } from "@/store/use-app-store"
-import { usePersistData } from "@/hooks/use-persist-data"
+import { SlidersHorizontal } from 'lucide-react'
+import { DataViewSelector } from '@/components/filters/data-view-selector'
+import { CompactTimeFilter } from '@/components/filters/compact-time-filter'
+import { CompactOrganizationFilter } from '@/components/filters/compact-organization-filter'
+import { DataExport } from '@/components/features/data-export'
+import { PDFReportExport } from '@/components/features/pdf-report-export'
+import { useAppStore } from '@/store/use-app-store'
+import { usePersistData } from '@/hooks/use-persist-data'
 
 interface TopToolbarProps {
   showFilters: boolean
@@ -15,7 +15,11 @@ interface TopToolbarProps {
   rawCount: number
 }
 
-export function TopToolbar({ showFilters, onToggleFilters, rawCount }: TopToolbarProps) {
+export function TopToolbar({
+  showFilters,
+  onToggleFilters,
+  rawCount,
+}: TopToolbarProps) {
   const { clearPersistedData } = usePersistData()
 
   return (
@@ -27,13 +31,13 @@ export function TopToolbar({ showFilters, onToggleFilters, rawCount }: TopToolba
           className="flex items-center gap-2 px-3 py-2 text-sm text-slate-600 hover:text-slate-800 border border-slate-300 rounded-lg hover:border-slate-400 transition-colors"
         >
           <SlidersHorizontal className="w-4 h-4" />
-          {showFilters ? "隐藏筛选" : "显示筛选"}
+          {showFilters ? '隐藏筛选' : '显示筛选'}
         </button>
         <p className="text-sm text-slate-600">
-          已加载 {" "}
+          已加载{' '}
           <span className="font-semibold text-blue-600">
             {rawCount.toLocaleString()}
-          </span>{" "}
+          </span>{' '}
           条数据记录
         </p>
       </div>
@@ -52,9 +56,7 @@ export function TopToolbar({ showFilters, onToggleFilters, rawCount }: TopToolba
         <button
           onClick={() => {
             if (
-              confirm(
-                "确定要清除当前数据并重新上传吗？这将清除所有缓存数据。"
-              )
+              confirm('确定要清除当前数据并重新上传吗？这将清除所有缓存数据。')
             ) {
               useAppStore.getState().clearData()
               clearPersistedData()

@@ -240,7 +240,7 @@ export function FileUpload() {
               正在处理文件...
             </h3>
             <p className="text-sm text-slate-600">
-              {progress.currentFileName} ({progress.currentFile}/
+              {progress.fileName} ({progress.currentFile}/
               {progress.totalFiles})
             </p>
             <p className="text-xs text-slate-500">
@@ -415,7 +415,8 @@ export function FileUpload() {
         </label>
 
         <p className="text-xs text-slate-500 mt-6">
-          最大文件大小：200MB | 支持多文件上传 | 仅支持 CSV 格式 | 支持百万行数据导入
+          最大文件大小：200MB | 支持多文件上传 | 仅支持 CSV 格式 |
+          支持百万行数据导入
         </p>
       </div>
     </div>

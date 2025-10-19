@@ -27,9 +27,7 @@ export function useKPI(): KPIResult | null {
     if (filters.businessTypes.length > 0) {
       const sum = filters.businessTypes.reduce((acc, type) => {
         const normalized = normalizeChineseText(type)
-        return (
-          acc + (premiumTargets.byBusinessType[normalized] ?? 0)
-        )
+        return acc + (premiumTargets.byBusinessType[normalized] ?? 0)
       }, 0)
       if (sum > 0) {
         return sum
@@ -53,9 +51,8 @@ export function useKPI(): KPIResult | null {
 
     // 周增量模式：需要计算当前周和前一周的差值
     // 获取当前选择的周次
-    const currentWeek = filters.viewMode === 'single'
-      ? filters.singleModeWeek
-      : null
+    const currentWeek =
+      filters.viewMode === 'single' ? filters.singleModeWeek : null
 
     if (!currentWeek) {
       // 如果没有选择具体周次，返回当周值
@@ -71,7 +68,10 @@ export function useKPI(): KPIResult | null {
     const previousWeek = currentWeek - 1
     const previousWeekData = rawData.filter((record: InsuranceRecord) => {
       // 应用除了周次之外的所有筛选条件
-      if (filters.years.length > 0 && !filters.years.includes(record.policy_start_year)) {
+      if (
+        filters.years.length > 0 &&
+        !filters.years.includes(record.policy_start_year)
+      ) {
         return false
       }
 
@@ -81,31 +81,59 @@ export function useKPI(): KPIResult | null {
       }
 
       // 应用其他筛选条件
-      if (filters.organizations.length > 0 && !filters.organizations.includes(record.third_level_organization)) {
+      if (
+        filters.organizations.length > 0 &&
+        !filters.organizations.includes(record.third_level_organization)
+      ) {
         return false
       }
-      if (filters.insuranceTypes.length > 0 && !filters.insuranceTypes.includes(record.insurance_type)) {
+      if (
+        filters.insuranceTypes.length > 0 &&
+        !filters.insuranceTypes.includes(record.insurance_type)
+      ) {
         return false
       }
-      if (filters.businessTypes.length > 0 && !filters.businessTypes.includes(record.business_type_category)) {
+      if (
+        filters.businessTypes.length > 0 &&
+        !filters.businessTypes.includes(record.business_type_category)
+      ) {
         return false
       }
-      if (filters.coverageTypes.length > 0 && !filters.coverageTypes.includes(record.coverage_type)) {
+      if (
+        filters.coverageTypes.length > 0 &&
+        !filters.coverageTypes.includes(record.coverage_type)
+      ) {
         return false
       }
-      if (filters.customerCategories.length > 0 && !filters.customerCategories.includes(record.customer_category_3)) {
+      if (
+        filters.customerCategories.length > 0 &&
+        !filters.customerCategories.includes(record.customer_category_3)
+      ) {
         return false
       }
-      if (filters.vehicleGrades.length > 0 && record.vehicle_insurance_grade && !filters.vehicleGrades.includes(record.vehicle_insurance_grade)) {
+      if (
+        filters.vehicleGrades.length > 0 &&
+        record.vehicle_insurance_grade &&
+        !filters.vehicleGrades.includes(record.vehicle_insurance_grade)
+      ) {
         return false
       }
-      if (filters.terminalSources.length > 0 && !filters.terminalSources.includes(record.terminal_source)) {
+      if (
+        filters.terminalSources.length > 0 &&
+        !filters.terminalSources.includes(record.terminal_source)
+      ) {
         return false
       }
-      if (filters.isNewEnergy !== null && record.is_new_energy_vehicle !== filters.isNewEnergy) {
+      if (
+        filters.isNewEnergy !== null &&
+        record.is_new_energy_vehicle !== filters.isNewEnergy
+      ) {
         return false
       }
-      if (filters.renewalStatuses.length > 0 && !filters.renewalStatuses.includes(record.renewal_status)) {
+      if (
+        filters.renewalStatuses.length > 0 &&
+        !filters.renewalStatuses.includes(record.renewal_status)
+      ) {
         return false
       }
 

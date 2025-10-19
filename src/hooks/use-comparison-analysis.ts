@@ -130,7 +130,9 @@ export function useInsuranceTypeStructure() {
           ? (data.signedPremium / totalSignedPremium) * 100
           : 0,
       avgPremiumPerPolicy:
-        data.policyCount > 0 ? Math.round(data.signedPremium / data.policyCount) : 0,
+        data.policyCount > 0
+          ? Math.round(data.signedPremium / data.policyCount)
+          : 0,
     }))
 
     // 按签单保费降序排序

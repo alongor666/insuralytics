@@ -18,9 +18,7 @@ export function buildPreviousFilters(filters: FilterState): FilterState | null {
   }
 
   const previousTrendWeeks = filters.trendModeWeeks?.length
-    ? filters.trendModeWeeks
-        .map(week => week - 1)
-        .filter(week => week >= 1)
+    ? filters.trendModeWeeks.map(week => week - 1).filter(week => week >= 1)
     : filters.trendModeWeeks
 
   return {

@@ -56,8 +56,7 @@ function getColorByAverageExpense(expense: number): { color: string; level: Heat
 }
 
 export function ExpenseHeatmap({ className }: Props) {
-  const { data } = useAppStore()
-  const filteredData = useFilteredData(data)
+  const filteredData = useFilteredData()
 
   // 计算每个机构的费用指标
   const organizationMetrics = useMemo(() => {
@@ -333,7 +332,7 @@ export function ExpenseHeatmap({ className }: Props) {
             </div>
             <div className="flex items-center gap-2">
               <div className="w-4 h-4 rounded" style={{ backgroundColor: '#ef4444' }}></div>
-              <span className="text-gray-600">危险 (>25%)</span>
+              <span className="text-gray-600">危险 (&gt;25%)</span>
             </div>
           </div>
         </div>

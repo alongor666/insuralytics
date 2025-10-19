@@ -20,7 +20,9 @@ export function CustomerFilter() {
   )
   const availableCustomerCategories = Array.from(
     new Set(
-      recordsForCustomerCategory.map(record => normalizeChineseText(record.customer_category_3))
+      recordsForCustomerCategory.map(record =>
+        normalizeChineseText(record.customer_category_3)
+      )
     )
   )
     .filter(cat => cat)

@@ -386,15 +386,24 @@ export const TrendChart = React.memo(function TrendChart() {
                 // 仅当选中单一年份时，把 Brush 区间联动到周序号过滤
                 if (filters.years && filters.years.length === 1) {
                   const weeks = data.slice(start, end + 1).map(d => d.week)
-                  const minW = weeks.reduce((min, w) => Math.min(min, w), Infinity)
-                  const maxW = weeks.reduce((max, w) => Math.max(max, w), -Infinity)
+                  const minW = weeks.reduce(
+                    (min, w) => Math.min(min, w),
+                    Infinity
+                  )
+                  const maxW = weeks.reduce(
+                    (max, w) => Math.max(max, w),
+                    -Infinity
+                  )
                   // 若覆盖全范围，则清空周过滤
                   if (start === 0 && end === data.length - 1) {
                     updateFilters({ trendModeWeeks: [], weeks: [] })
                   } else {
                     const rangeWeeks: number[] = []
                     for (let w = minW; w <= maxW; w++) rangeWeeks.push(w)
-                    updateFilters({ trendModeWeeks: rangeWeeks, weeks: rangeWeeks })
+                    updateFilters({
+                      trendModeWeeks: rangeWeeks,
+                      weeks: rangeWeeks,
+                    })
                   }
                 }
               }}

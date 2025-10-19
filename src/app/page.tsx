@@ -29,7 +29,14 @@ import { useAppStore } from '@/store/use-app-store'
 import { useKPI } from '@/hooks/use-kpi'
 import { usePersistData } from '@/hooks/use-persist-data'
 import { useState, useEffect, useMemo } from 'react'
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog'
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+} from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
 
 export default function HomePage() {
@@ -40,7 +47,9 @@ export default function HomePage() {
   const kpiData = useKPI()
   const [showFilters, setShowFilters] = useState(false)
   const [mounted, setMounted] = useState(false)
-  const [activeTab, setActiveTab] = useState<'kpi' | 'trend' | 'thematic' | 'multichart'>('kpi')
+  const [activeTab, setActiveTab] = useState<
+    'kpi' | 'trend' | 'thematic' | 'multichart'
+  >('kpi')
   const resetFilters = useAppStore(state => state.resetFilters)
 
   // 使用数据持久化
@@ -100,7 +109,7 @@ export default function HomePage() {
             <div className="mb-4">
               <Tabs
                 value={activeTab}
-                onValueChange={(v) => {
+                onValueChange={v => {
                   const tab = v as 'kpi' | 'trend' | 'thematic' | 'multichart'
                   setActiveTab(tab)
                   setViewMode(tab === 'trend' ? 'trend' : 'single')
@@ -154,7 +163,11 @@ export default function HomePage() {
             {/* 专题分析模块 */}
             {activeTab === 'thematic' && (
               <div className="space-y-8">
-                <ThematicAnalysis currentKpis={kpiData} timeProgress={timeProgress} compact={false} />
+                <ThematicAnalysis
+                  currentKpis={kpiData}
+                  timeProgress={timeProgress}
+                  compact={false}
+                />
                 <CustomerSegmentationBubble />
                 <ExpenseHeatmap />
               </div>
@@ -195,7 +208,9 @@ export default function HomePage() {
             </div>
             <DialogFooter>
               <div className="flex items-center justify-end gap-3 w-full">
-                <Button variant="outline" onClick={resetFilters}>重置筛选</Button>
+                <Button variant="outline" onClick={resetFilters}>
+                  重置筛选
+                </Button>
                 <Button onClick={() => setShowFilters(false)}>关闭</Button>
               </div>
             </DialogFooter>

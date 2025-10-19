@@ -34,8 +34,11 @@ function openDB(): Promise<IDBDatabase> {
   })
 }
 
-export async function saveRawData(data: InsuranceRecord[]): Promise<{ success: boolean; error?: string }> {
-  if (!isIndexedDBAvailable()) return { success: false, error: 'IndexedDB 不可用' }
+export async function saveRawData(
+  data: InsuranceRecord[]
+): Promise<{ success: boolean; error?: string }> {
+  if (!isIndexedDBAvailable())
+    return { success: false, error: 'IndexedDB 不可用' }
 
   try {
     const db = await openDB()
@@ -61,14 +64,16 @@ export async function loadRawData(): Promise<InsuranceRecord[] | null> {
 
   try {
     const db = await openDB()
-    const result = await new Promise<InsuranceRecord[] | null>((resolve, reject) => {
-      const tx = db.transaction(RAW_STORE, 'readonly')
-      const store = tx.objectStore(RAW_STORE)
-      const req = store.get(RAW_KEY)
+    const result = await new Promise<InsuranceRecord[] | null>(
+      (resolve, reject) => {
+        const tx = db.transaction(RAW_STORE, 'readonly')
+        const store = tx.objectStore(RAW_STORE)
+        const req = store.get(RAW_KEY)
 
-      req.onsuccess = () => resolve((req.result as InsuranceRecord[]) || null)
-      req.onerror = () => reject(req.error)
-    })
+        req.onsuccess = () => resolve((req.result as InsuranceRecord[]) || null)
+        req.onerror = () => reject(req.error)
+      }
+    )
     db.close()
     return result
   } catch (error) {

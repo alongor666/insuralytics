@@ -44,7 +44,9 @@ export function MoreFiltersPanel() {
       'terminalSources',
     ])
     const sources = Array.from(
-      new Set(filtered.map(record => normalizeChineseText(record.terminal_source)))
+      new Set(
+        filtered.map(record => normalizeChineseText(record.terminal_source))
+      )
     ).sort()
     return sources.map(source => ({ label: source, value: source }))
   }
@@ -64,7 +66,11 @@ export function MoreFiltersPanel() {
       'businessTypes',
     ])
     const types = Array.from(
-      new Set(filtered.map(record => normalizeChineseText(record.business_type_category)))
+      new Set(
+        filtered.map(record =>
+          normalizeChineseText(record.business_type_category)
+        )
+      )
     ).sort()
     return types.map(type => ({ label: type, value: type }))
   }
@@ -167,7 +173,9 @@ export function MoreFiltersPanel() {
                     options={getTerminalSourceOptions()}
                     selectedValues={filters.terminalSources}
                     onChange={values =>
-                      updateFilters({ terminalSources: values.map(normalizeChineseText) })
+                      updateFilters({
+                        terminalSources: values.map(normalizeChineseText),
+                      })
                     }
                     placeholder="选择终端来源"
                     searchPlaceholder="搜索终端来源..."
@@ -248,7 +256,9 @@ export function MoreFiltersPanel() {
                     options={getBusinessTypeOptions()}
                     selectedValues={filters.businessTypes}
                     onChange={values =>
-                      updateFilters({ businessTypes: values.map(normalizeChineseText) })
+                      updateFilters({
+                        businessTypes: values.map(normalizeChineseText),
+                      })
                     }
                     placeholder="选择业务类型"
                     searchPlaceholder="搜索业务类型..."

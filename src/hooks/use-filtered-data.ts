@@ -19,10 +19,7 @@ export function applyFilters(
     }
 
     // 周序号筛选
-    if (
-      filters.weeks?.length &&
-      !filters.weeks.includes(record.week_number)
-    ) {
+    if (filters.weeks?.length && !filters.weeks.includes(record.week_number)) {
       return false
     }
 

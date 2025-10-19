@@ -14,7 +14,20 @@
  */
 
 import { useMemo, useState } from 'react'
-import { ScatterChart, Scatter, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, ZAxis, Cell, ReferenceLine, Label } from 'recharts'
+import {
+  ScatterChart,
+  Scatter,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  Legend,
+  ResponsiveContainer,
+  ZAxis,
+  Cell,
+  ReferenceLine,
+  Label,
+} from 'recharts'
 import { useFilteredData } from '@/hooks/use-filtered-data'
 import { useAppStore } from '@/store/use-app-store'
 import { InsuranceRecord } from '@/types/insurance'
@@ -22,21 +35,21 @@ import { formatNumber, formatPercent } from '@/utils/format'
 
 // 颜色配置 - 按客户类型
 const CUSTOMER_COLORS: Record<string, string> = {
-  '个人客户': '#3b82f6', // 蓝色
-  '企业客户': '#10b981', // 绿色
-  '政府机关': '#f59e0b', // 橙色
-  '其他': '#6b7280', // 灰色
+  个人客户: '#3b82f6', // 蓝色
+  企业客户: '#10b981', // 绿色
+  政府机关: '#f59e0b', // 橙色
+  其他: '#6b7280', // 灰色
 }
 
 // 颜色配置 - 按业务类型
 const BUSINESS_COLORS: Record<string, string> = {
-  '非营业客车新车': '#3b82f6',
-  '非营业客车旧车非过户': '#10b981',
-  '非营业客车旧车过户车': '#f59e0b',
-  '营业货车新车': '#ef4444',
-  '营业货车旧车': '#8b5cf6',
-  '网约车': '#ec4899',
-  '其他': '#6b7280',
+  非营业客车新车: '#3b82f6',
+  非营业客车旧车非过户: '#10b981',
+  非营业客车旧车过户车: '#f59e0b',
+  营业货车新车: '#ef4444',
+  营业货车旧车: '#8b5cf6',
+  网约车: '#ec4899',
+  其他: '#6b7280',
 }
 
 type ColorByType = 'customer' | 'business'
@@ -55,8 +68,7 @@ interface Props {
 }
 
 export function CustomerSegmentationBubble({ className }: Props) {
-  const { data } = useAppStore()
-  const filteredData = useFilteredData(data)
+  const filteredData = useFilteredData()
   const [colorBy, setColorBy] = useState<ColorByType>('customer')
 
   // 计算气泡图数据
@@ -64,7 +76,8 @@ export function CustomerSegmentationBubble({ className }: Props) {
     if (filteredData.length === 0) return []
 
     // 按选定维度分组
-    const groupKey = colorBy === 'customer' ? 'customer_category_3' : 'business_type_category'
+    const groupKey =
+      colorBy === 'customer' ? 'customer_category_3' : 'business_type_category'
     const groups = new Map<string, InsuranceRecord[]>()
 
     filteredData.forEach(record => {
@@ -79,19 +92,33 @@ export function CustomerSegmentationBubble({ className }: Props) {
     const results: BubbleDataPoint[] = []
 
     groups.forEach((records, groupName) => {
-      const totalPremium = records.reduce((sum, r) => sum + r.signed_premium_yuan, 0)
-      const totalMaturedPremium = records.reduce((sum, r) => sum + r.matured_premium_yuan, 0)
-      const totalClaim = records.reduce((sum, r) => sum + r.reported_claim_payment_yuan, 0)
-      const totalPolicyCount = records.reduce((sum, r) => sum + r.policy_count, 0)
+      const totalPremium = records.reduce(
+        (sum, r) => sum + r.signed_premium_yuan,
+        0
+      )
+      const totalMaturedPremium = records.reduce(
+        (sum, r) => sum + r.matured_premium_yuan,
+        0
+      )
+      const totalClaim = records.reduce(
+        (sum, r) => sum + r.reported_claim_payment_yuan,
+        0
+      )
+      const totalPolicyCount = records.reduce(
+        (sum, r) => sum + r.policy_count,
+        0
+      )
 
       // 跳过无效数据
       if (totalPolicyCount === 0) return
 
       const averagePremium = Math.round(totalPremium / totalPolicyCount) // 单均保费取整
-      const lossRatio = totalMaturedPremium > 0 ? (totalClaim / totalMaturedPremium) * 100 : 0
+      const lossRatio =
+        totalMaturedPremium > 0 ? (totalClaim / totalMaturedPremium) * 100 : 0
 
       // 获取颜色
-      const colorMap = colorBy === 'customer' ? CUSTOMER_COLORS : BUSINESS_COLORS
+      const colorMap =
+        colorBy === 'customer' ? CUSTOMER_COLORS : BUSINESS_COLORS
       const color = colorMap[groupName] || colorMap['其他']
 
       // 客户群分类逻辑
@@ -128,8 +155,14 @@ export function CustomerSegmentationBubble({ className }: Props) {
     if (bubbleData.length === 0) return { avgPremium: 0, avgLossRatio: 0 }
 
     const totalPolicies = bubbleData.reduce((sum, d) => sum + d.policyCount, 0)
-    const weightedPremium = bubbleData.reduce((sum, d) => sum + d.averagePremium * d.policyCount, 0)
-    const weightedLossRatio = bubbleData.reduce((sum, d) => sum + d.lossRatio * d.policyCount, 0)
+    const weightedPremium = bubbleData.reduce(
+      (sum, d) => sum + d.averagePremium * d.policyCount,
+      0
+    )
+    const weightedLossRatio = bubbleData.reduce(
+      (sum, d) => sum + d.lossRatio * d.policyCount,
+      0
+    )
 
     return {
       avgPremium: Math.round(weightedPremium / totalPolicies),
@@ -147,16 +180,29 @@ export function CustomerSegmentationBubble({ className }: Props) {
       'high-value': '💎 高价值客户',
       'high-risk': '⚠️ 高风险客户',
       'low-value': '📉 低价值客户',
-      'normal': '✓ 正常客户',
+      normal: '✓ 正常客户',
     }
 
     return (
       <div className="bg-white p-4 border rounded-lg shadow-lg">
         <div className="font-semibold text-lg mb-2">{data.name}</div>
         <div className="space-y-1 text-sm">
-          <div>单均保费: <span className="font-medium">{`${formatNumber(data.averagePremium)} 元`}</span></div>
-          <div>赔付率: <span className="font-medium">{formatPercent(data.lossRatio / 100)}</span></div>
-          <div>保单件数: <span className="font-medium">{data.policyCount.toLocaleString()}</span></div>
+          <div>
+            单均保费:{' '}
+            <span className="font-medium">{`${formatNumber(data.averagePremium)} 元`}</span>
+          </div>
+          <div>
+            赔付率:{' '}
+            <span className="font-medium">
+              {formatPercent(data.lossRatio / 100)}
+            </span>
+          </div>
+          <div>
+            保单件数:{' '}
+            <span className="font-medium">
+              {data.policyCount.toLocaleString()}
+            </span>
+          </div>
           <div className="pt-2 border-t mt-2">
             <span className="text-gray-600">{segmentLabels[data.segment]}</span>
           </div>
@@ -216,9 +262,7 @@ export function CustomerSegmentationBubble({ className }: Props) {
       {/* 图表区域 */}
       <div className="p-4">
         <ResponsiveContainer width="100%" height={500}>
-          <ScatterChart
-            margin={{ top: 20, right: 80, bottom: 60, left: 80 }}
-          >
+          <ScatterChart margin={{ top: 20, right: 80, bottom: 60, left: 80 }}>
             <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
 
             <XAxis
@@ -226,12 +270,12 @@ export function CustomerSegmentationBubble({ className }: Props) {
               dataKey="averagePremium"
               name="单均保费"
               unit="元"
-              tickFormatter={(value) => `${(value / 1000).toFixed(1)}k`}
+              tickFormatter={value => `${(value / 1000).toFixed(1)}k`}
               label={{
                 value: '单均保费（元）',
                 position: 'bottom',
                 offset: 40,
-                style: { fontSize: 14, fontWeight: 500 }
+                style: { fontSize: 14, fontWeight: 500 },
               }}
             />
 
@@ -240,13 +284,13 @@ export function CustomerSegmentationBubble({ className }: Props) {
               dataKey="lossRatio"
               name="赔付率"
               unit="%"
-              tickFormatter={(value) => `${value.toFixed(0)}%`}
+              tickFormatter={value => `${value.toFixed(0)}%`}
               label={{
                 value: '赔付率（%）',
                 angle: -90,
                 position: 'left',
                 offset: 50,
-                style: { fontSize: 14, fontWeight: 500 }
+                style: { fontSize: 14, fontWeight: 500 },
               }}
             />
 
@@ -266,7 +310,7 @@ export function CustomerSegmentationBubble({ className }: Props) {
                 value: '平均单均保费',
                 position: 'top',
                 fill: '#6b7280',
-                fontSize: 12
+                fontSize: 12,
               }}
             />
             <ReferenceLine
@@ -277,11 +321,14 @@ export function CustomerSegmentationBubble({ className }: Props) {
                 value: '平均赔付率',
                 position: 'right',
                 fill: '#6b7280',
-                fontSize: 12
+                fontSize: 12,
               }}
             />
 
-            <Tooltip content={<CustomTooltip />} cursor={{ strokeDasharray: '3 3' }} />
+            <Tooltip
+              content={<CustomTooltip />}
+              cursor={{ strokeDasharray: '3 3' }}
+            />
             <Legend
               wrapperStyle={{ paddingTop: '20px' }}
               formatter={(value, entry: any) => {
@@ -290,11 +337,7 @@ export function CustomerSegmentationBubble({ className }: Props) {
               }}
             />
 
-            <Scatter
-              name="客户群"
-              data={bubbleData}
-              fill="#8884d8"
-            >
+            <Scatter name="客户群" data={bubbleData} fill="#8884d8">
               {bubbleData.map((entry, index) => (
                 <Cell key={`cell-${index}`} fill={entry.color} />
               ))}
@@ -307,7 +350,9 @@ export function CustomerSegmentationBubble({ className }: Props) {
           {/* 高价值客户群 */}
           {bubbleData.filter(d => d.segment === 'high-value').length > 0 && (
             <div className="bg-green-50 border border-green-200 rounded-lg p-4">
-              <div className="font-semibold text-green-900 mb-2">💎 高价值客户群</div>
+              <div className="font-semibold text-green-900 mb-2">
+                💎 高价值客户群
+              </div>
               <div className="text-sm text-green-800">
                 {bubbleData
                   .filter(d => d.segment === 'high-value')
@@ -323,7 +368,9 @@ export function CustomerSegmentationBubble({ className }: Props) {
           {/* 高风险客户群 */}
           {bubbleData.filter(d => d.segment === 'high-risk').length > 0 && (
             <div className="bg-red-50 border border-red-200 rounded-lg p-4">
-              <div className="font-semibold text-red-900 mb-2">⚠️ 高风险客户群</div>
+              <div className="font-semibold text-red-900 mb-2">
+                ⚠️ 高风险客户群
+              </div>
               <div className="text-sm text-red-800">
                 {bubbleData
                   .filter(d => d.segment === 'high-risk')
@@ -339,7 +386,9 @@ export function CustomerSegmentationBubble({ className }: Props) {
           {/* 低价值客户群 */}
           {bubbleData.filter(d => d.segment === 'low-value').length > 0 && (
             <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
-              <div className="font-semibold text-yellow-900 mb-2">📉 低价值客户群</div>
+              <div className="font-semibold text-yellow-900 mb-2">
+                📉 低价值客户群
+              </div>
               <div className="text-sm text-yellow-800">
                 {bubbleData
                   .filter(d => d.segment === 'low-value')

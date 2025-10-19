@@ -254,7 +254,9 @@ function transformCSVRow(
       ]),
 
       // 渠道维度
-      terminal_source: normalizeChineseText(String(row.terminal_source || '').trim()),
+      terminal_source: normalizeChineseText(
+        String(row.terminal_source || '').trim()
+      ),
 
       // 业务指标 - 添加范围验证
       signed_premium_yuan: parseNumber(
@@ -510,8 +512,7 @@ export async function parseCSVFile(
   let processedRows = 0
 
   const { file: sourceFile, encoding } = await normalizeFileEncoding(file)
-  const encodingLabel =
-    encoding !== 'utf-8' ? `${encoding}→utf-8` : 'utf-8'
+  const encodingLabel = encoding !== 'utf-8' ? `${encoding}→utf-8` : 'utf-8'
 
   if (encoding !== 'utf-8') {
     console.info(
@@ -567,9 +568,10 @@ export async function parseCSVFile(
         const estimatedTimeRemaining = Math.max(0, estimatedTotal - elapsed)
 
         // 估算总行数（基于文件大小和已处理行数）
-        const estimatedTotalRows = processedRows > 0 && percentage > 0 
-          ? Math.round(processedRows / (percentage / 100))
-          : undefined
+        const estimatedTotalRows =
+          processedRows > 0 && percentage > 0
+            ? Math.round(processedRows / (percentage / 100))
+            : undefined
 
         // 计算当前错误数量
         const currentErrorCount = transformErrors.length
@@ -593,8 +595,7 @@ export async function parseCSVFile(
       skipEmptyLines: true,
       worker: true,
       // 优化大文件处理：增大块大小以提高性能
-      chunkSize:
-        sourceFile.size > 50 * 1024 * 1024 ? 1024 * 256 : 1024 * 64, // 大文件使用更大的块
+      chunkSize: sourceFile.size > 50 * 1024 * 1024 ? 1024 * 256 : 1024 * 64, // 大文件使用更大的块
       chunk: (results, parser) => {
         try {
           console.log(
@@ -672,9 +673,13 @@ export async function parseCSVFile(
           const BATCH_SIZE = 1000 // 每批处理1000行
           for (let i = 0; i < batchData.length; i += BATCH_SIZE) {
             const batch = batchData.slice(i, i + BATCH_SIZE)
-            
+
             batch.forEach((row, batchIndex) => {
-              if (row && typeof row === 'object' && Object.keys(row).length > 0) {
+              if (
+                row &&
+                typeof row === 'object' &&
+                Object.keys(row).length > 0
+              ) {
                 const globalIndex = rows.length
                 const { data, errors } = transformCSVRow(row, globalIndex)
 
@@ -700,17 +705,17 @@ export async function parseCSVFile(
             })
 
             // 每处理一批数据后更新进度
-             const progress = Math.min(
-               (processedRows / (sourceFile.size / 1000)) * 50,
-               50
-             )
-             updateProgress('parsing', progress)
-             
-             // 给浏览器一个喘息的机会，避免阻塞UI
-             if (i % (BATCH_SIZE * 10) === 0) {
-               setTimeout(() => {}, 0)
-             }
-           }
+            const progress = Math.min(
+              (processedRows / (sourceFile.size / 1000)) * 50,
+              50
+            )
+            updateProgress('parsing', progress)
+
+            // 给浏览器一个喘息的机会，避免阻塞UI
+            if (i % (BATCH_SIZE * 10) === 0) {
+              setTimeout(() => {}, 0)
+            }
+          }
 
           if ((results.meta as any) && (results.meta as any).cursor) {
             const progress =

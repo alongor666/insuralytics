@@ -10,6 +10,7 @@ import { useMemo } from 'react'
 import { useAppStore, useFilteredData } from '@/store/use-app-store'
 import type { InsuranceRecord } from '@/types/insurance'
 import { kpiEngine } from '@/lib/calculations/kpi-engine'
+import { normalizeChineseText } from '@/lib/utils'
 
 export interface TrendPoint {
   key: string
@@ -38,6 +39,23 @@ export function useTrendData(): TrendPoint[] {
   const filtered = useFilteredData()
   const filters = useAppStore(state => state.filters)
   const dataViewType = filters.dataViewType
+  const premiumTargets = useAppStore(state => state.premiumTargets)
+
+  const targetForScope = useMemo(() => {
+    if (!premiumTargets) return null
+
+    if (filters.businessTypes.length > 0) {
+      const sum = filters.businessTypes.reduce((acc, type) => {
+        const normalized = normalizeChineseText(type)
+        return acc + (premiumTargets.byBusinessType[normalized] ?? 0)
+      }, 0)
+      if (sum > 0) {
+        return sum
+      }
+    }
+
+    return premiumTargets.overall > 0 ? premiumTargets.overall : null
+  }, [filters.businessTypes, premiumTargets])
 
   const series = useMemo(() => {
     if (filtered.length === 0) return []
@@ -61,7 +79,9 @@ export function useTrendData(): TrendPoint[] {
         kpi = kpiEngine.calculateIncrement(rows, previousRows)
       } else {
         // 当周值模式 或 第一周（没有前一周可比较）
-        kpi = kpiEngine.calculate(rows)
+        kpi = kpiEngine.calculate(rows, {
+          annualTargetYuan: targetForScope ?? undefined,
+        })
       }
 
       points.push({

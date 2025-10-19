@@ -79,8 +79,14 @@ export function FilterFeedback() {
 
     // 4. 年份跨度反馈
     if (filters.years.length > 1) {
-      const maxYear = filters.years.reduce((max, y) => Math.max(max, y), -Infinity)
-      const minYear = filters.years.reduce((min, y) => Math.min(min, y), Infinity)
+      const maxYear = filters.years.reduce(
+        (max, y) => Math.max(max, y),
+        -Infinity
+      )
+      const minYear = filters.years.reduce(
+        (min, y) => Math.min(min, y),
+        Infinity
+      )
       const yearSpan = maxYear - minYear
       if (yearSpan > 2) {
         newFeedback = {

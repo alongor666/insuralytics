@@ -6,7 +6,12 @@ import {
   removeStorageItem,
   StorageKeys,
 } from '@/lib/storage/local-storage'
-import { loadRawData, saveRawData, clearRawData, isIndexedDBAvailable } from '@/lib/storage/indexed-db'
+import {
+  loadRawData,
+  saveRawData,
+  clearRawData,
+  isIndexedDBAvailable,
+} from '@/lib/storage/indexed-db'
 import type { InsuranceRecord, FilterState } from '@/types/insurance'
 
 /**
@@ -28,7 +33,9 @@ export function usePersistData() {
       const savedFilters = getStorageItem<FilterState>(StorageKeys.FILTERS)
 
       if (savedData && savedData.length > 0) {
-        console.log(`[Persist] 恢复了 ${savedData.length} 条数据 (localStorage)`) 
+        console.log(
+          `[Persist] 恢复了 ${savedData.length} 条数据 (localStorage)`
+        )
         setRawData(savedData)
       } else if (isIndexedDBAvailable()) {
         const idbData = await loadRawData()
@@ -45,7 +52,9 @@ export function usePersistData() {
     }
 
     restore()
-    return () => { cancelled = true }
+    return () => {
+      cancelled = true
+    }
   }, []) // 空依赖数组,仅在挂载时执行
 
   // 保存数据到 IndexedDB / localStorage (当数据变化时)

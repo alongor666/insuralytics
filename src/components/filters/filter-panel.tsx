@@ -7,7 +7,10 @@ import { ProductFilter } from './product-filter'
 import { CustomerFilter } from './customer-filter'
 import { FilterPresets } from '@/components/features/filter-presets'
 import { MoreFiltersPanel } from './more-filters-panel'
-import { FilterFeedback, FilterStats } from '@/components/filters/filter-feedback'
+import {
+  FilterFeedback,
+  FilterStats,
+} from '@/components/filters/filter-feedback'
 import { useState } from 'react'
 
 export function FilterPanel() {
@@ -43,11 +46,18 @@ export function FilterPanel() {
           <Filter className="h-5 w-5 text-blue-600" />
           <h2 className="text-lg font-semibold text-slate-800">业务维度筛选</h2>
           {hasActiveFilters && (
-            <span className="rounded-full bg-blue-100 px-2 py-0.5 text-xs font-medium text-blue-700">已启用</span>
+            <span className="rounded-full bg-blue-100 px-2 py-0.5 text-xs font-medium text-blue-700">
+              已启用
+            </span>
           )}
         </div>
         {hasActiveFilters && (
-          <Button variant="outline" size="sm" onClick={resetFilters} className="gap-2">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={resetFilters}
+            className="gap-2"
+          >
             <RotateCcw className="h-4 w-4" /> 重置
           </Button>
         )}
@@ -75,7 +85,9 @@ export function FilterPanel() {
               更多筛选条件
               {hasActiveMoreFilters && (
                 <span className="rounded-full bg-orange-100 px-2 py-0.5 text-xs font-medium text-orange-700">
-                  {filters.terminalSources.length + (filters.isNewEnergy !== null ? 1 : 0)} 项
+                  {filters.terminalSources.length +
+                    (filters.isNewEnergy !== null ? 1 : 0)}{' '}
+                  项
                 </span>
               )}
             </span>

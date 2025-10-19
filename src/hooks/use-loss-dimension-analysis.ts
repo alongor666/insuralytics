@@ -48,7 +48,7 @@ function normalizeDimensionValue(
         ? { key: 'transferred', label: '过户车' }
         : { key: 'non_transferred', label: '非过户车' }
     default: {
-      const rawValue = (record as Record<string, unknown>)[dimensionKey]
+      const rawValue = (record as unknown as Record<string, unknown>)[dimensionKey]
       const isEmpty =
         rawValue === null ||
         rawValue === undefined ||

@@ -13,7 +13,10 @@ export function ViewModeSelector() {
   const { viewMode, setViewMode } = useAppStore()
 
   return (
-    <Tabs value={viewMode} onValueChange={(v) => setViewMode(v as 'single' | 'trend')}>
+    <Tabs
+      value={viewMode}
+      onValueChange={v => setViewMode(v as 'single' | 'trend')}
+    >
       <TabsList className="bg-white/10 backdrop-blur-md border border-white/20 shadow-sm">
         <TabsTrigger
           value="single"

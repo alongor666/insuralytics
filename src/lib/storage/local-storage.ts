@@ -232,20 +232,30 @@ export function compressLargeData<T>(data: T[], maxItems: number = 50000): T[] {
     const middleStart = Math.floor(data.length * 0.45)
     const middlePart = data.slice(middleStart, middleStart + tenPercent)
     const backPart = data.slice(-tenPercent)
-    
+
     // 剩余空间用于均匀采样
-    const remainingSlots = maxItems - frontPart.length - middlePart.length - backPart.length
-    const samplingData = data.slice(tenPercent, middleStart).concat(
-      data.slice(middleStart + tenPercent, -tenPercent)
-    )
-    
+    const remainingSlots =
+      maxItems - frontPart.length - middlePart.length - backPart.length
+    const samplingData = data
+      .slice(tenPercent, middleStart)
+      .concat(data.slice(middleStart + tenPercent, -tenPercent))
+
     const step = Math.ceil(samplingData.length / remainingSlots)
     const sampledData: T[] = []
-    for (let i = 0; i < samplingData.length && sampledData.length < remainingSlots; i += step) {
+    for (
+      let i = 0;
+      i < samplingData.length && sampledData.length < remainingSlots;
+      i += step
+    ) {
       sampledData.push(samplingData[i])
     }
-    
-    const compressed = [...frontPart, ...sampledData, ...middlePart, ...backPart]
+
+    const compressed = [
+      ...frontPart,
+      ...sampledData,
+      ...middlePart,
+      ...backPart,
+    ]
     console.warn(
       `[Storage] 大数据集分层压缩: ${data.length} → ${compressed.length} (保留关键数据段)`
     )

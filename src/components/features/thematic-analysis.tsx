@@ -11,7 +11,13 @@
 'use client'
 
 import React, { useState } from 'react'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/card'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import {
   Select,
@@ -118,7 +124,9 @@ function TimeProgressAnalysisCard({
   const timeProgressAchievementRate = objectiveKpi
 
   // 获取动态色彩（五级预警）
-  const colorScale = getDynamicColorByPremiumProgress(timeProgressAchievementRate)
+  const colorScale = getDynamicColorByPremiumProgress(
+    timeProgressAchievementRate
+  )
 
   if (compact) {
     return (
@@ -200,19 +208,25 @@ function TimeProgressAnalysisCard({
           <div>
             <p className="text-slate-600">已达成</p>
             <p className="font-semibold">
-              {achievedValue !== null ? `${formatNumber(achievedValue, 0)} ${unit}` : '-'}
+              {achievedValue !== null
+                ? `${formatNumber(achievedValue, 0)} ${unit}`
+                : '-'}
             </p>
           </div>
           <div>
             <p className="text-slate-600">年度目标</p>
             <p className="font-semibold">
-              {targetValue !== null ? `${formatNumber(targetValue, 0)} ${unit}` : '-'}
+              {targetValue !== null
+                ? `${formatNumber(targetValue, 0)} ${unit}`
+                : '-'}
             </p>
           </div>
           <div>
             <p className="text-slate-600">达成率</p>
             <p className="font-semibold">
-              {achievementRate !== null ? `${achievementRate.toFixed(1)}%` : '-'}
+              {achievementRate !== null
+                ? `${achievementRate.toFixed(1)}%`
+                : '-'}
             </p>
           </div>
         </div>
@@ -274,7 +288,11 @@ function RatioOverviewCard({
           </p>
         </div>
 
-        <Progress value={ratio ?? 0} className="h-2" indicatorClassName={colorScale.progress} />
+        <Progress
+          value={ratio ?? 0}
+          className="h-2"
+          indicatorClassName={colorScale.progress}
+        />
 
         {comparison && (
           <div className={cn('mt-1.5 text-xs', getComparisonColor(comparison))}>
@@ -330,9 +348,16 @@ function RatioOverviewCard({
         {comparison && (
           <div className="flex items-center justify-between text-sm">
             <span className="text-slate-600">环比变化</span>
-            <div className={cn('flex items-center gap-1 font-semibold', getComparisonColor(comparison))}>
+            <div
+              className={cn(
+                'flex items-center gap-1 font-semibold',
+                getComparisonColor(comparison)
+              )}
+            >
               {comparison.direction === 'up' && <ArrowUp className="h-4 w-4" />}
-              {comparison.direction === 'down' && <ArrowDown className="h-4 w-4" />}
+              {comparison.direction === 'down' && (
+                <ArrowDown className="h-4 w-4" />
+              )}
               <span>{formatComparisonChange(comparison, true)}</span>
             </div>
           </div>
@@ -385,9 +410,16 @@ function TrendAnalysisCard({
         </p>
 
         {comparison && (
-          <div className={cn('mt-1.5 flex items-center gap-1 text-xs', getComparisonColor(comparison))}>
+          <div
+            className={cn(
+              'mt-1.5 flex items-center gap-1 text-xs',
+              getComparisonColor(comparison)
+            )}
+          >
             {comparison.direction === 'up' && <ArrowUp className="h-3 w-3" />}
-            {comparison.direction === 'down' && <ArrowDown className="h-3 w-3" />}
+            {comparison.direction === 'down' && (
+              <ArrowDown className="h-3 w-3" />
+            )}
             <span>环比 {formatComparisonChange(comparison, isPercentage)}</span>
           </div>
         )}
@@ -418,11 +450,20 @@ function TrendAnalysisCard({
         {comparison && (
           <div className="space-y-2 rounded-lg bg-slate-50 p-3">
             <p className="text-xs font-medium text-slate-600">环比变化</p>
-            <div className={cn('flex items-center gap-2 text-lg font-bold', getComparisonColor(comparison))}>
+            <div
+              className={cn(
+                'flex items-center gap-2 text-lg font-bold',
+                getComparisonColor(comparison)
+              )}
+            >
               {comparison.direction === 'up' && <ArrowUp className="h-5 w-5" />}
-              {comparison.direction === 'down' && <ArrowDown className="h-5 w-5" />}
+              {comparison.direction === 'down' && (
+                <ArrowDown className="h-5 w-5" />
+              )}
               <span>{formatComparisonChange(comparison, false)}</span>
-              <span className="text-sm">({formatComparisonChange(comparison, true)})</span>
+              <span className="text-sm">
+                ({formatComparisonChange(comparison, true)})
+              </span>
             </div>
           </div>
         )}
@@ -469,7 +510,11 @@ interface AnalysisSectionProps {
   children: React.ReactNode
 }
 
-function AnalysisSection({ title, description, children }: AnalysisSectionProps) {
+function AnalysisSection({
+  title,
+  description,
+  children,
+}: AnalysisSectionProps) {
   return (
     <section className="space-y-3">
       <div>
@@ -499,7 +544,8 @@ function buildComparisonForMetric(
   }
 
   const absoluteChange = current - previous
-  const percentChange = previous !== 0 ? (absoluteChange / Math.abs(previous)) * 100 : null
+  const percentChange =
+    previous !== 0 ? (absoluteChange / Math.abs(previous)) * 100 : null
   let direction: 'up' | 'down' | 'flat' = 'flat'
 
   if (absoluteChange > 0) direction = 'up'
@@ -545,7 +591,11 @@ interface PremiumProgressCardProps {
   compact?: boolean
 }
 
-function PremiumProgressCard({ item, timeProgress, compact = false }: PremiumProgressCardProps) {
+function PremiumProgressCard({
+  item,
+  timeProgress,
+  compact = false,
+}: PremiumProgressCardProps) {
   const achievementRate =
     item.premiumPlanYuan > 0
       ? (item.signedPremiumYuan / item.premiumPlanYuan) * 100
@@ -570,7 +620,13 @@ function PremiumProgressCard({ item, timeProgress, compact = false }: PremiumPro
       <div className="mb-2 flex items-start justify-between">
         <div>
           <p className="text-xs text-slate-500">{item.label}</p>
-          <p className={cn(compact ? 'text-xl' : 'text-2xl', 'font-bold', colorScale.text)}>
+          <p
+            className={cn(
+              compact ? 'text-xl' : 'text-2xl',
+              'font-bold',
+              colorScale.text
+            )}
+          >
             {timeAchievementRate !== null
               ? `${timeAchievementRate.toFixed(1)}%`
               : '-'}
@@ -610,9 +666,12 @@ interface PolicyProgressCardProps {
   compact?: boolean
 }
 
-function PolicyProgressCard({ item, timeProgress, compact = false }: PolicyProgressCardProps) {
-  const policyTarget =
-    item.policyTarget !== null ? item.policyTarget : null
+function PolicyProgressCard({
+  item,
+  timeProgress,
+  compact = false,
+}: PolicyProgressCardProps) {
+  const policyTarget = item.policyTarget !== null ? item.policyTarget : null
 
   const achievementRate =
     policyTarget && policyTarget > 0
@@ -636,7 +695,13 @@ function PolicyProgressCard({ item, timeProgress, compact = false }: PolicyProgr
       <div className="mb-2 flex items-start justify-between">
         <div>
           <p className="text-xs text-slate-500">{item.label}</p>
-          <p className={cn(compact ? 'text-xl' : 'text-2xl', 'font-bold', colorScale.text)}>
+          <p
+            className={cn(
+              compact ? 'text-xl' : 'text-2xl',
+              'font-bold',
+              colorScale.text
+            )}
+          >
             {timeAchievementRate !== null
               ? `${timeAchievementRate.toFixed(1)}%`
               : '-'}
@@ -676,7 +741,11 @@ interface AveragePremiumCardProps {
   compact?: boolean
 }
 
-function AveragePremiumCard({ item, previous, compact = false }: AveragePremiumCardProps) {
+function AveragePremiumCard({
+  item,
+  previous,
+  compact = false,
+}: AveragePremiumCardProps) {
   const currentValue = item.averagePremium
   const previousValue = previous?.averagePremium ?? null
 
@@ -686,7 +755,7 @@ function AveragePremiumCard({ item, previous, compact = false }: AveragePremiumC
       : null
 
   const changePercent =
-    changeValue !== null && previousValue !== 0
+    changeValue !== null && previousValue !== null && previousValue !== 0
       ? (changeValue / Math.abs(previousValue)) * 100
       : null
 
@@ -714,12 +783,22 @@ function AveragePremiumCard({ item, previous, compact = false }: AveragePremiumC
       )}
     >
       <p className="text-xs text-slate-500">{item.label}</p>
-      <p className={cn(compact ? 'text-xl' : 'text-2xl', 'font-bold text-slate-800')}>
+      <p
+        className={cn(
+          compact ? 'text-xl' : 'text-2xl',
+          'font-bold text-slate-800'
+        )}
+      >
         {currentValue !== null ? `${formatNumber(currentValue, 0)} 元` : '-'}
       </p>
 
       {changeValue !== null ? (
-        <div className={cn('mt-1 flex items-center gap-1 text-sm font-medium', changeColor)}>
+        <div
+          className={cn(
+            'mt-1 flex items-center gap-1 text-sm font-medium',
+            changeColor
+          )}
+        >
           {direction === 'up' && <ArrowUp className="h-4 w-4" />}
           {direction === 'down' && <ArrowDown className="h-4 w-4" />}
           <span>
@@ -736,7 +815,8 @@ function AveragePremiumCard({ item, previous, compact = false }: AveragePremiumC
       )}
 
       <div className="mt-2 text-xs text-slate-500">
-        上期：{previousValue !== null ? `${formatNumber(previousValue, 0)} 元` : '—'}
+        上期：
+        {previousValue !== null ? `${formatNumber(previousValue, 0)} 元` : '—'}
       </div>
     </div>
   )
@@ -772,7 +852,13 @@ function LossRatioRiskCard({ item, compact = false }: LossRatioRiskCardProps) {
       <div className="flex items-start justify-between">
         <div>
           <p className="text-xs text-slate-500">{item.label}</p>
-          <p className={cn(compact ? 'text-xl' : 'text-2xl', 'font-bold', colorScale.text)}>
+          <p
+            className={cn(
+              compact ? 'text-xl' : 'text-2xl',
+              'font-bold',
+              colorScale.text
+            )}
+          >
             {lossRatio !== null ? formatPercent(lossRatio, 1) : '-'}
           </p>
         </div>
@@ -794,7 +880,9 @@ function LossRatioRiskCard({ item, compact = false }: LossRatioRiskCardProps) {
       />
 
       <div className="mt-2 text-xs text-slate-500">
-        上期：{item.previous?.lossRatio !== null && item.previous?.lossRatio !== undefined
+        上期：
+        {item.previous?.lossRatio !== null &&
+        item.previous?.lossRatio !== undefined
           ? formatPercent(item.previous?.lossRatio, 1)
           : '—'}
       </div>
@@ -802,7 +890,10 @@ function LossRatioRiskCard({ item, compact = false }: LossRatioRiskCardProps) {
   )
 }
 
-type LossTrendMetricKey = 'reportedClaimPayment' | 'claimCaseCount' | 'averageClaim'
+type LossTrendMetricKey =
+  | 'reportedClaimPayment'
+  | 'claimCaseCount'
+  | 'averageClaim'
 
 interface LossTrendCardProps {
   item: LossDimensionItem
@@ -821,15 +912,19 @@ function LossTrendCard({
 }: LossTrendCardProps) {
   const currentValue = item.current[metric]
   const previousValue = item.previous?.[metric] ?? null
-  const comparison = buildComparisonForMetric(currentValue, previousValue, false)
+  const comparison = buildComparisonForMetric(
+    currentValue,
+    previousValue,
+    false
+  )
   const colorClass = getComparisonColor(comparison)
 
   const directionIcon =
-    comparison.direction === 'up'
-      ? <ArrowUp className={compact ? 'h-3 w-3' : 'h-4 w-4'} />
-      : comparison.direction === 'down'
-        ? <ArrowDown className={compact ? 'h-3 w-3' : 'h-4 w-4'} />
-        : null
+    comparison.direction === 'up' ? (
+      <ArrowUp className={compact ? 'h-3 w-3' : 'h-4 w-4'} />
+    ) : comparison.direction === 'down' ? (
+      <ArrowDown className={compact ? 'h-3 w-3' : 'h-4 w-4'} />
+    ) : null
 
   return (
     <div
@@ -839,16 +934,29 @@ function LossTrendCard({
       )}
     >
       <p className="text-xs text-slate-500">{item.label}</p>
-      <p className={cn(compact ? 'text-xl' : 'text-2xl', 'font-bold text-slate-800')}>
+      <p
+        className={cn(
+          compact ? 'text-xl' : 'text-2xl',
+          'font-bold text-slate-800'
+        )}
+      >
         {currentValue !== null && currentValue !== undefined
           ? `${formatNumber(currentValue, decimals)}${unit}`
           : '-'}
       </p>
 
       {comparison.absoluteChange !== null ? (
-        <div className={cn('mt-1 flex items-center gap-1 text-sm font-medium', colorClass)}>
+        <div
+          className={cn(
+            'mt-1 flex items-center gap-1 text-sm font-medium',
+            colorClass
+          )}
+        >
           {directionIcon}
-          <span>{formatSignedValue(comparison.absoluteChange, decimals)}{unit}</span>
+          <span>
+            {formatSignedValue(comparison.absoluteChange, decimals)}
+            {unit}
+          </span>
           {comparison.percentChange !== null && (
             <span className="text-xs">
               ({formatSignedValue(comparison.percentChange, 1)}%)
@@ -860,7 +968,8 @@ function LossTrendCard({
       )}
 
       <div className="mt-2 text-xs text-slate-500">
-        上期：{previousValue !== null && previousValue !== undefined
+        上期：
+        {previousValue !== null && previousValue !== undefined
           ? `${formatNumber(previousValue, decimals)}${unit}`
           : '—'}
       </div>
@@ -894,7 +1003,8 @@ function MarginRatioGridCard({
   const colorScale = colorFn(ratio)
 
   // 计算环比变化
-  const hasComparison = ratio !== null && previous !== null && previous !== undefined
+  const hasComparison =
+    ratio !== null && previous !== null && previous !== undefined
   const change = hasComparison ? ratio - previous : null
   const isWorsened = hasComparison
     ? isHigherBetter
@@ -923,7 +1033,13 @@ function MarginRatioGridCard({
       <p className="text-xs text-slate-500 mb-1">{label}</p>
 
       {/* 比率值 */}
-      <p className={cn(compact ? 'text-xl' : 'text-2xl', 'font-bold', colorScale.text)}>
+      <p
+        className={cn(
+          compact ? 'text-xl' : 'text-2xl',
+          'font-bold',
+          colorScale.text
+        )}
+      >
         {ratio !== null ? formatPercent(ratio, 1) : '-'}
       </p>
 
@@ -958,19 +1074,16 @@ function MarginAmountGridCard({
   compact = false,
 }: MarginAmountGridCardProps) {
   // 计算环比变化
-  const hasComparison = value !== null && previous !== null && previous !== undefined
+  const hasComparison =
+    value !== null && previous !== null && previous !== undefined
   const change = hasComparison ? value - previous : null
-  const changePercent = hasComparison && previous !== 0
-    ? (change! / Math.abs(previous)) * 100
-    : null
+  const changePercent =
+    hasComparison && previous !== 0
+      ? (change! / Math.abs(previous)) * 100
+      : null
 
-  const direction = change === null
-    ? 'flat'
-    : change > 0
-      ? 'up'
-      : change < 0
-        ? 'down'
-        : 'flat'
+  const direction =
+    change === null ? 'flat' : change > 0 ? 'up' : change < 0 ? 'down' : 'flat'
 
   // 边贡额是"越高越好"，所以上升=好，下降=坏
   const isBetter = direction === 'up'
@@ -983,11 +1096,11 @@ function MarginAmountGridCard({
       : 'text-slate-500'
 
   const directionIcon =
-    direction === 'up'
-      ? <ArrowUp className={compact ? 'h-3 w-3' : 'h-4 w-4'} />
-      : direction === 'down'
-        ? <ArrowDown className={compact ? 'h-3 w-3' : 'h-4 w-4'} />
-        : null
+    direction === 'up' ? (
+      <ArrowUp className={compact ? 'h-3 w-3' : 'h-4 w-4'} />
+    ) : direction === 'down' ? (
+      <ArrowDown className={compact ? 'h-3 w-3' : 'h-4 w-4'} />
+    ) : null
 
   return (
     <div
@@ -1000,17 +1113,25 @@ function MarginAmountGridCard({
       <p className="text-xs text-slate-500 mb-1">{label}</p>
 
       {/* 当前值 */}
-      <p className={cn(compact ? 'text-xl' : 'text-2xl', 'font-bold text-slate-800')}>
+      <p
+        className={cn(
+          compact ? 'text-xl' : 'text-2xl',
+          'font-bold text-slate-800'
+        )}
+      >
         {value !== null ? `${formatNumber(value, decimals)}` : '-'}
       </p>
 
       {/* 环比变化 */}
       {hasComparison && change !== null ? (
-        <div className={cn('mt-1 flex items-center gap-1 text-sm font-medium', changeColor)}>
+        <div
+          className={cn(
+            'mt-1 flex items-center gap-1 text-sm font-medium',
+            changeColor
+          )}
+        >
           {directionIcon}
-          <span>
-            {formatSignedValue(change, decimals)}
-          </span>
+          <span>{formatSignedValue(change, decimals)}</span>
           {changePercent !== null && (
             <span className="text-xs">
               ({formatSignedValue(changePercent, 1)}%)
@@ -1023,7 +1144,8 @@ function MarginAmountGridCard({
 
       {/* 上期值 */}
       <div className="mt-2 text-xs text-slate-500">
-        上期：{previous !== null && previous !== undefined
+        上期：
+        {previous !== null && previous !== undefined
           ? `${formatNumber(previous, decimals)}`
           : '—'}
       </div>
@@ -1045,7 +1167,9 @@ function PremiumAnalysisTab({
   timeProgress,
   compact = false,
 }: TabContentProps) {
-  const [dimension, setDimension] = useState<PremiumDimensionKey>(DEFAULT_PREMIUM_DIMENSION)
+  const [dimension, setDimension] = useState<PremiumDimensionKey>(
+    DEFAULT_PREMIUM_DIMENSION
+  )
   const { items, previousMap } = usePremiumDimensionAnalysis(dimension)
 
   const gridCols = compact
@@ -1059,7 +1183,9 @@ function PremiumAnalysisTab({
       <div
         className={cn(
           'flex flex-col gap-3',
-          compact ? 'sm:flex-row sm:items-center sm:justify-between' : 'md:flex-row md:items-center md:justify-between'
+          compact
+            ? 'sm:flex-row sm:items-center sm:justify-between'
+            : 'md:flex-row md:items-center md:justify-between'
         )}
       >
         <div>
@@ -1072,7 +1198,9 @@ function PremiumAnalysisTab({
           value={dimension}
           onValueChange={value => setDimension(value as PremiumDimensionKey)}
         >
-          <SelectTrigger className={cn('w-full', compact ? 'sm:w-48' : 'sm:w-60')}>
+          <SelectTrigger
+            className={cn('w-full', compact ? 'sm:w-48' : 'sm:w-60')}
+          >
             <SelectValue placeholder="选择分析维度" />
           </SelectTrigger>
           <SelectContent>
@@ -1145,7 +1273,9 @@ function PremiumAnalysisTab({
 }
 
 function LossAnalysisTab({ compact = false }: TabContentProps) {
-  const [dimension, setDimension] = useState<LossDimensionKey>(DEFAULT_LOSS_DIMENSION)
+  const [dimension, setDimension] = useState<LossDimensionKey>(
+    DEFAULT_LOSS_DIMENSION
+  )
   const items = useLossDimensionAnalysis(dimension)
   const hasData = items.length > 0
 
@@ -1161,7 +1291,10 @@ function LossAnalysisTab({ compact = false }: TabContentProps) {
     })
     .slice(0, 12)
 
-  const getAbsoluteChange = (item: LossDimensionItem, metric: LossTrendMetricKey) => {
+  const getAbsoluteChange = (
+    item: LossDimensionItem,
+    metric: LossTrendMetricKey
+  ) => {
     const current = item.current[metric]
     const previous = item.previous?.[metric] ?? null
     if (
@@ -1176,15 +1309,27 @@ function LossAnalysisTab({ compact = false }: TabContentProps) {
   }
 
   const sortByReportedClaim = [...items]
-    .sort((a, b) => getAbsoluteChange(b, 'reportedClaimPayment') - getAbsoluteChange(a, 'reportedClaimPayment'))
+    .sort(
+      (a, b) =>
+        getAbsoluteChange(b, 'reportedClaimPayment') -
+        getAbsoluteChange(a, 'reportedClaimPayment')
+    )
     .slice(0, 12)
 
   const sortByClaimCount = [...items]
-    .sort((a, b) => getAbsoluteChange(b, 'claimCaseCount') - getAbsoluteChange(a, 'claimCaseCount'))
+    .sort(
+      (a, b) =>
+        getAbsoluteChange(b, 'claimCaseCount') -
+        getAbsoluteChange(a, 'claimCaseCount')
+    )
     .slice(0, 12)
 
   const sortByAverageClaim = [...items]
-    .sort((a, b) => getAbsoluteChange(b, 'averageClaim') - getAbsoluteChange(a, 'averageClaim'))
+    .sort(
+      (a, b) =>
+        getAbsoluteChange(b, 'averageClaim') -
+        getAbsoluteChange(a, 'averageClaim')
+    )
     .slice(0, 12)
 
   return (
@@ -1192,7 +1337,9 @@ function LossAnalysisTab({ compact = false }: TabContentProps) {
       <div
         className={cn(
           'flex flex-col gap-3',
-          compact ? 'sm:flex-row sm:items-center sm:justify-between' : 'md:flex-row md:items-center md:justify-between'
+          compact
+            ? 'sm:flex-row sm:items-center sm:justify-between'
+            : 'md:flex-row md:items-center md:justify-between'
         )}
       >
         <div>
@@ -1205,7 +1352,9 @@ function LossAnalysisTab({ compact = false }: TabContentProps) {
           value={dimension}
           onValueChange={value => setDimension(value as LossDimensionKey)}
         >
-          <SelectTrigger className={cn('w-full', compact ? 'sm:w-48' : 'sm:w-60')}>
+          <SelectTrigger
+            className={cn('w-full', compact ? 'sm:w-48' : 'sm:w-60')}
+          >
             <SelectValue placeholder="选择分析维度" />
           </SelectTrigger>
           <SelectContent>
@@ -1226,7 +1375,11 @@ function LossAnalysisTab({ compact = false }: TabContentProps) {
           >
             <div className={cn('grid gap-3', gridCols)}>
               {sortByLossRatio.map(item => (
-                <LossRatioRiskCard key={`loss-ratio-${item.key}`} item={item} compact={compact} />
+                <LossRatioRiskCard
+                  key={`loss-ratio-${item.key}`}
+                  item={item}
+                  compact={compact}
+                />
               ))}
             </div>
           </AnalysisSection>
@@ -1316,10 +1469,14 @@ function ContributionAnalysisTab({ compact = false }: TabContentProps) {
   const sortedByMarginAmount = [...items]
     .sort((a, b) => {
       const aChange = a.previous
-        ? Math.abs(a.contributionMarginAmount - a.previous.contributionMarginAmount)
+        ? Math.abs(
+            a.contributionMarginAmount - a.previous.contributionMarginAmount
+          )
         : -Infinity
       const bChange = b.previous
-        ? Math.abs(b.contributionMarginAmount - b.previous.contributionMarginAmount)
+        ? Math.abs(
+            b.contributionMarginAmount - b.previous.contributionMarginAmount
+          )
         : -Infinity
       return bChange - aChange
     })
@@ -1451,7 +1608,9 @@ export function ThematicAnalysis({
   return (
     <div className={cn('w-full', className)}>
       <Tabs defaultValue="premium" className="w-full">
-        <TabsList className={cn('grid w-full', compact ? 'grid-cols-3' : 'grid-cols-3')}>
+        <TabsList
+          className={cn('grid w-full', compact ? 'grid-cols-3' : 'grid-cols-3')}
+        >
           <TabsTrigger value="premium">保费分析</TabsTrigger>
           <TabsTrigger value="loss">赔付分析</TabsTrigger>
           <TabsTrigger value="contribution">边贡分析</TabsTrigger>

@@ -103,16 +103,12 @@ export function DualProgress({
         <div className="mt-2 flex items-center justify-between text-xs text-slate-600">
           <div className="flex items-center gap-2">
             <div className={cn('h-3 w-3 rounded', progressColor)} />
-            <span>
-              已达成: {achievedProgress.toFixed(1)}%
-            </span>
+            <span>已达成: {achievedProgress.toFixed(1)}%</span>
           </div>
 
           <div className="flex items-center gap-2">
             <div className={cn('h-3 w-1', timeMarkerColor)} />
-            <span>
-              时间进度: {timeProgress.toFixed(1)}%
-            </span>
+            <span>时间进度: {timeProgress.toFixed(1)}%</span>
           </div>
 
           <div
