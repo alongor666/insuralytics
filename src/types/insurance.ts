@@ -204,7 +204,7 @@ export interface KPIResponse {
 // ============= 筛选器类型 =============
 
 /**
- * 筛选器状态
+ * 筛选器状态 - 单层筛选配置
  */
 export interface FilterState {
   // 顶层筛选
@@ -233,6 +233,26 @@ export interface FilterState {
   terminalSources: string[]
   isNewEnergy: boolean | null
   renewalStatuses: string[] // 新续转状态
+}
+
+/**
+ * 分层筛选状态
+ */
+export interface HierarchicalFilterState {
+  // 第一级：全局筛选（顶层，影响所有下级）
+  global: Partial<FilterState>
+
+  // 第二级：Tab级筛选（按Tab存储，继承全局）
+  tabs: {
+    kpi?: Partial<FilterState>
+    trend?: Partial<FilterState>
+    thematic?: Partial<FilterState>
+    multichart?: Partial<FilterState>
+    targets?: Partial<FilterState>
+  }
+
+  // 当前激活的Tab
+  activeTab: 'kpi' | 'trend' | 'thematic' | 'multichart' | 'targets'
 }
 
 // ============= 聚合结果类型 =============

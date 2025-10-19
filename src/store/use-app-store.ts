@@ -9,6 +9,7 @@ import { devtools } from 'zustand/middleware'
 import type {
   InsuranceRecord,
   FilterState,
+  HierarchicalFilterState,
   KPIResult,
   PremiumTargets,
 } from '@/types/insurance'
@@ -57,7 +58,8 @@ interface AppState {
   uploadProgress: number
 
   // ============= 筛选状态 =============
-  filters: FilterState
+  filters: FilterState // 向后兼容的扁平筛选状态
+  hierarchicalFilters: HierarchicalFilterState // 新增：分层筛选状态
 
   // ============= 计算缓存 =============
   computedKPIs: Map<string, KPIResult>
@@ -79,10 +81,18 @@ interface AppState {
   setError: (error: Error | null) => void
   setUploadProgress: (progress: number) => void
 
-  // 筛选操作
+  // 筛选操作（向后兼容）
   updateFilters: (filters: Partial<FilterState>) => void
   resetFilters: () => void
   setViewMode: (mode: 'single' | 'trend') => void
+
+  // 新增：分层筛选操作
+  updateGlobalFilters: (filters: Partial<FilterState>) => void
+  updateTabFilters: (tab: HierarchicalFilterState['activeTab'], filters: Partial<FilterState>) => void
+  setActiveTab: (tab: HierarchicalFilterState['activeTab']) => void
+  getMergedFilters: () => FilterState // 合并全局和当前Tab筛选
+  resetGlobalFilters: () => void
+  resetTabFilters: (tab?: HierarchicalFilterState['activeTab']) => void
 
   // 目标管理
   setPremiumTargets: (targets: PremiumTargets) => void
