@@ -1,0 +1,24 @@
+{
+  "id": "F003",
+  "name": "趋势分析图表模块",
+  "status": "partial",
+  "priority": "P0",
+  "completeness": 70,
+  "version": "v1.3.0",
+  "last_updated": "2025-10-20",
+  "last_verified": "2025-10-20",
+  "core_files": [
+    "src/components/features/trend-chart.tsx",
+    "src/lib/analytics/anomaly-detection.ts",
+    "src/lib/analytics/trend-fitting.ts"
+  ],
+  "related_decisions": [
+    "ADR-004"
+  ],
+  "related_issues": [],
+  "tags": [
+    "数据可视化",
+    "智能分析",
+    "P0"
+  ]
+}

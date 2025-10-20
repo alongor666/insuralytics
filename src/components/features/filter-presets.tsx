@@ -1,3 +1,8 @@
+/**
+ * @owner 飞友
+ * @status 完成
+ * @doc See [FEAT-P1-02: 筛选条件组合保存与管理](./../../../开发文档/01_features/FEAT-P1-02_filter-presets.md)
+ */
 'use client'
 
 import { useState } from 'react'

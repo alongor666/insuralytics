@@ -1,4 +1,8 @@
 /**
+ * @owner 飞友
+ * @status 完成
+ * @doc See [FEAT-P1-03: CSV导入智能纠错](./../../../开发文档/01_features/FEAT-P1-03_fuzzy-matching-correction.md)
+ *
  * 模糊匹配工具
  * 用于智能纠正枚举值的拼写错误
  */

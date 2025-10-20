@@ -1,6 +1,6 @@
 'use client'
 
-import { Database, TrendingUp, FileText, SlidersHorizontal } from 'lucide-react'
+import { Database } from 'lucide-react'
 import { FileUpload } from '@/components/features/file-upload'
 import { CompactKPIDashboard } from '@/components/features/compact-kpi-dashboard'
 import { TrendChart } from '@/components/features/trend-chart'
@@ -23,7 +23,6 @@ import {
   useFilterPersistence,
 } from '@/components/filters/filter-interaction-manager'
 import { TopToolbar } from '@/components/layout/top-toolbar'
-import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Toaster } from '@/components/ui/toaster'
 import { useAppStore } from '@/store/use-app-store'
 import { useKPI } from '@/hooks/use-kpi'
@@ -43,19 +42,24 @@ import { AnalysisTabs, type AnalysisTabValue } from '@/components/layout/analysi
 
 export default function HomePage() {
   const rawData = useAppStore(state => state.rawData)
-  const isLoading = useAppStore(state => state.isLoading)
-  const viewMode = useAppStore(state => state.viewMode)
   const setViewMode = useAppStore(state => state.setViewMode)
   const kpiData = useKPI()
   const [showFilters, setShowFilters] = useState(false)
   const [mounted, setMounted] = useState(false)
-  const [activeTab, setActiveTab] = useState<
-    'kpi' | 'trend' | 'thematic' | 'multichart'
-  >('kpi')
+  const router = useRouter()
+  const searchParams = useSearchParams()
+  const initialTabParam = (searchParams?.get('tab') as AnalysisTabValue | null) ?? 'kpi'
+  const validTabs: AnalysisTabValue[] = ['kpi', 'trend', 'thematic', 'multichart', 'targets']
+  const initialTab: AnalysisTabValue = validTabs.includes(initialTabParam)
+    ? initialTabParam
+    : 'kpi'
+  const [activeTab, setActiveTab] = useState<AnalysisTabValue>(
+    initialTab === 'targets' ? 'kpi' : initialTab
+  )
   const resetFilters = useAppStore(state => state.resetFilters)
 
   // 使用数据持久化
-  const { clearPersistedData } = usePersistData()
+  usePersistData()
 
   // 使用筛选器状态持久化
   useFilterPersistence()
@@ -77,8 +81,32 @@ export default function HomePage() {
     setMounted(true)
   }, [])
 
+  useEffect(() => {
+    if (initialTab === 'trend') {
+      setViewMode('trend')
+      setActiveTab('trend')
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
   if (!mounted) {
     return null
+  }
+
+  const handleTabChange = (tab: AnalysisTabValue) => {
+    if (tab === 'targets') {
+      router.push('/targets')
+      return
+    }
+
+    setActiveTab(tab)
+    setViewMode(tab === 'trend' ? 'trend' : 'single')
+
+    if (tab === 'kpi') {
+      router.replace('/', { scroll: false })
+    } else {
+      router.replace(`/?tab=${tab}`, { scroll: false })
+    }
   }
 
   return (
@@ -109,21 +137,7 @@ export default function HomePage() {
           {/* 统一导航 Tabs，驱动内容与视图模式 */}
           {hasData && (
             <div className="mb-4">
-              <Tabs
-                value={activeTab}
-                onValueChange={v => {
-                  const tab = v as 'kpi' | 'trend' | 'thematic' | 'multichart'
-                  setActiveTab(tab)
-                  setViewMode(tab === 'trend' ? 'trend' : 'single')
-                }}
-              >
-                <TabsList>
-                  <TabsTrigger value="kpi">KPI看板</TabsTrigger>
-                  <TabsTrigger value="trend">多周趋势</TabsTrigger>
-                  <TabsTrigger value="thematic">专题分析</TabsTrigger>
-                  <TabsTrigger value="multichart">多维图表</TabsTrigger>
-                </TabsList>
-              </Tabs>
+              <AnalysisTabs active={activeTab} onChange={handleTabChange} />
             </div>
           )}
 

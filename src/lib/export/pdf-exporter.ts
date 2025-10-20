@@ -103,7 +103,7 @@ export async function exportPDFReport(
     pdf.setFont('helvetica', 'normal')
 
     // 分析模式
-    const viewModeText = filters.viewMode === 'single' ? '单周分析' : '多周趋势'
+    const viewModeText = filters.viewMode === 'single' ? '单周分析' : '周趋势分析'
     pdf.text(`分析模式：${viewModeText}`, margin, yPosition)
     yPosition += 6
 

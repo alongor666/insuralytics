@@ -28,11 +28,24 @@ function groupByYearWeek(
 ): Map<string, InsuranceRecord[]> {
   const map = new Map<string, InsuranceRecord[]>()
   for (const r of records) {
-    const key = `${r.policy_start_year}-${String(r.week_number).padStart(2, '0')}`
+    const key = `${r.policy_start_year}-${String(r.week_number).padStart(3, '0')}`
     if (!map.has(key)) map.set(key, [])
     map.get(key)!.push(r)
   }
   return map
+}
+
+/**
+ * 按照 年份 + 周次 的实际先后顺序排序键名
+ * 不能直接使用字符串排序，否则第100周会排在第99周之前
+ */
+function sortYearWeekKeys(keys: string[]): string[] {
+  return keys.sort((a, b) => {
+    const [yearA, weekA] = a.split('-').map(Number)
+    const [yearB, weekB] = b.split('-').map(Number)
+    if (yearA !== yearB) return yearA - yearB
+    return weekA - weekB
+  })
 }
 
 export function useTrendData(): TrendPoint[] {
@@ -64,7 +77,7 @@ export function useTrendData(): TrendPoint[] {
     const grouped = groupByYearWeek(filtered)
 
     // 将Map转换为数组并排序，以便计算周增量
-    const sortedKeys = Array.from(grouped.keys()).sort()
+    const sortedKeys = sortYearWeekKeys(Array.from(grouped.keys()))
     const points: TrendPoint[] = []
 
     sortedKeys.forEach((key, index) => {

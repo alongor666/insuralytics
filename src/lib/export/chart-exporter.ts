@@ -1,4 +1,8 @@
 /**
+ * @owner 飞友
+ * @status 完成
+ * @doc See [FEAT-P1-04: 图表导出为PNG图片](./../../../开发文档/01_features/FEAT-P1-04_chart-export.md)
+ *
  * 图表导出工具
  * 支持将图表导出为PNG图片
  */

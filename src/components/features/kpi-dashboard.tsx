@@ -1,3 +1,8 @@
+/**
+ * @owner 飞友
+ * @status 完成
+ * @doc See [FEAT-P1-01: KPI看板增强](./../../../开发文档/01_features/FEAT-P1-01_kpi-dashboard-enhancements.md)
+ */
 'use client'
 
 import {

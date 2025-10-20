@@ -51,7 +51,7 @@ export function PDFReportExport({ className }: Props) {
       }
     } else {
       return {
-        title: '车险业务分析报告 - 多周趋势',
+        title: '车险业务分析报告 - 周趋势分析',
         subtitle: `${new Date().toLocaleDateString()} 趋势分析`,
         author: '',
         includeKPI: false,
@@ -116,7 +116,7 @@ export function PDFReportExport({ className }: Props) {
       title={
         viewMode === 'single'
           ? '导出单周分析报告(包含KPI和静态图表)'
-          : '导出多周趋势报告(包含趋势图表)'
+          : '导出周趋势分析报告(包含趋势图表)'
       }
     >
       {isExporting ? (

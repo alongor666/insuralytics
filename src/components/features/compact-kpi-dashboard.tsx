@@ -46,7 +46,7 @@ export function CompactKPIDashboard({
     {
       key: 'contribution_margin_ratio',
       title: '满期边际贡献率',
-      unit: '%',
+      unit: '', // formatPercent已包含%
       formatter: formatPercent,
       getColor: val => getContributionMarginColor(val),
       decimals: 2,
@@ -54,7 +54,7 @@ export function CompactKPIDashboard({
     {
       key: 'premium_progress',
       title: '保费时间进度达成率',
-      unit: '%',
+      unit: '', // formatPercent已包含%
       formatter: formatPercent,
       getColor: val =>
         val !== null && val >= 100
@@ -67,7 +67,7 @@ export function CompactKPIDashboard({
     {
       key: 'loss_ratio',
       title: '满期赔付率',
-      unit: '%',
+      unit: '', // formatPercent已包含%
       formatter: formatPercent,
       getColor: val =>
         val !== null && val > 70
@@ -80,7 +80,7 @@ export function CompactKPIDashboard({
     {
       key: 'expense_ratio',
       title: '费用率',
-      unit: '%',
+      unit: '', // formatPercent已包含%
       formatter: formatPercent,
       getColor: val =>
         val !== null && val > 25
@@ -97,7 +97,7 @@ export function CompactKPIDashboard({
     {
       key: 'contribution_margin_amount',
       title: '满期边际贡献额',
-      unit: '万',
+      unit: '', // formatCurrency已包含"万元"
       formatter: val =>
         val !== null && val !== undefined && !isNaN(val)
           ? formatCurrency(val)
@@ -109,7 +109,7 @@ export function CompactKPIDashboard({
     {
       key: 'signed_premium',
       title: '签单保费',
-      unit: '万',
+      unit: '', // formatCurrency已包含"万元"
       formatter: val =>
         val !== null && val !== undefined && !isNaN(val)
           ? formatCurrency(val)
@@ -120,7 +120,7 @@ export function CompactKPIDashboard({
     {
       key: 'reported_claim_payment',
       title: '已报告赔款',
-      unit: '万',
+      unit: '', // formatCurrency已包含"万元"
       formatter: val =>
         val !== null && val !== undefined && !isNaN(val)
           ? formatCurrency(val)
@@ -131,7 +131,7 @@ export function CompactKPIDashboard({
     {
       key: 'expense_amount',
       title: '费用额',
-      unit: '万',
+      unit: '', // formatCurrency已包含"万元"
       formatter: val =>
         val !== null && val !== undefined && !isNaN(val)
           ? formatCurrency(val)
@@ -146,7 +146,7 @@ export function CompactKPIDashboard({
     {
       key: 'variable_cost_ratio',
       title: '变动成本率',
-      unit: '%',
+      unit: '', // formatPercent已包含%
       formatter: formatPercent,
       getColor: val =>
         val !== null && val > 90
@@ -159,7 +159,7 @@ export function CompactKPIDashboard({
     {
       key: 'maturity_ratio',
       title: '满期率',
-      unit: '%',
+      unit: '', // formatPercent已包含%
       formatter: formatPercent,
       getColor: val =>
         val !== null && val >= 80
@@ -172,7 +172,7 @@ export function CompactKPIDashboard({
     {
       key: 'matured_claim_ratio',
       title: '满期出险率',
-      unit: '%',
+      unit: '', // formatPercent已包含%
       formatter: formatPercent,
       getColor: val =>
         val !== null && val > 60

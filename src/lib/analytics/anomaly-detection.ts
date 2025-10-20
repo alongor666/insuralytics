@@ -1,4 +1,8 @@
 /**
+ * @owner 飞友
+ * @status 完成
+ * @doc See [FEAT-P1-06: 高级趋势分析](./../../../开发文档/01_features/FEAT-P1-06_advanced-trend-analysis.md)
+ *
  * 异常检测算法
  * 支持多种统计方法检测数据异常点
  */

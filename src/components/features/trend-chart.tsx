@@ -277,12 +277,16 @@ export const TrendChart = React.memo(function TrendChart() {
               yAxisId="left"
               tickFormatter={v => formatNumber(v, 0)}
               tick={{ fontSize: 12 }}
+              domain={['dataMin', 'dataMax']}
+              allowDataOverflow={false}
             />
             <YAxis
               yAxisId="right"
               orientation="right"
               tickFormatter={v => formatPercent(v, 0)}
               tick={{ fontSize: 12 }}
+              domain={['dataMin', 'dataMax']}
+              allowDataOverflow={false}
             />
             <Tooltip
               formatter={(val: any, name: string) => {

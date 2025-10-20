@@ -1,4 +1,8 @@
 /**
+ * @owner 飞友
+ * @status 完成
+ * @doc See [FEAT-P1-06: 高级趋势分析](./../../../开发文档/01_features/FEAT-P1-06_advanced-trend-analysis.md)
+ *
  * 趋势拟合算法
  * 提供多种趋势分析和预测方法
  */

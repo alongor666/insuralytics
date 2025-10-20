@@ -1,4 +1,9 @@
 /**
+ * @owner 飞友
+ * @status 完成
+ * @doc See [FEAT-P0-01: CSV数据导入与验证](../../开发文档/01_features/FEAT-P0-01_data-import.md)
+ * @doc See [FEAT-P1-05: 批量导入优化 (并行处理)](../../开发文档/01_features/FEAT-P1-05_parallel-file-import.md)
+ *
  * 文件上传钩子 - 优化版
  * 支持批量上传、错误恢复、进度跟踪和性能优化
  */

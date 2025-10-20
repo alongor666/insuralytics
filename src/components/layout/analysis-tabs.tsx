@@ -16,7 +16,7 @@ interface AnalysisTabsProps {
 
 const TAB_ITEMS: Array<{ value: AnalysisTabValue; label: string }> = [
   { value: 'kpi', label: 'KPI看板' },
-  { value: 'trend', label: '多周趋势' },
+  { value: 'trend', label: '周趋势分析' },
   { value: 'thematic', label: '专题分析' },
   { value: 'multichart', label: '多维图表' },
   { value: 'targets', label: '目标管理' },
