@@ -426,15 +426,15 @@ export default function TargetsPage() {
                 </label>
                 <div
                   className={`flex h-9 items-center rounded-md border px-3 text-sm ${
-                    Math.abs(difference) > 0.09 * 10000
+                    Math.abs(differenceWan) > 0.01
                       ? 'border-red-400 bg-red-50 text-red-600'
                       : 'border-emerald-300 bg-emerald-50 text-emerald-600'
                   }`}
                 >
                   <span>
-                    {Math.round(difference / 100) / 10000}
+                    {formatNumber(differenceWan, 2)}
                   </span>
-                  {Math.abs(difference) > 0.09 * 10000 && (
+                  {Math.abs(differenceWan) > 0.01 && (
                     <AlertCircle className="ml-2 h-4 w-4" />
                   )}
                 </div>
@@ -494,16 +494,10 @@ export default function TargetsPage() {
                       />
                     </td>
                     <td className="px-4 py-3 text-right text-slate-700">
-                      {formatNumber(
-                        Math.round((targets.overall || 0) / 52 / 100) / 100,
-                        2
-                      )}
+                      {formatNumber((targets.overall || 0) / 52 / 10000, 2)}
                     </td>
                     <td className="px-4 py-3 text-right text-slate-700">
-                      {formatNumber(
-                        Math.round((targets.overall || 0) / 365 / 100) / 100,
-                        2
-                      )}
+                      {formatNumber((targets.overall || 0) / 365 / 10000, 2)}
                     </td>
                     <td className="px-4 py-3 text-right text-slate-700">
                       100%

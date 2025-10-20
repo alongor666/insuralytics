@@ -29,6 +29,7 @@ import { useAppStore } from '@/store/use-app-store'
 import { useKPI } from '@/hooks/use-kpi'
 import { usePersistData } from '@/hooks/use-persist-data'
 import { useState, useEffect, useMemo } from 'react'
+import { useRouter, useSearchParams } from 'next/navigation'
 import {
   Dialog,
   DialogContent,
@@ -38,6 +39,7 @@ import {
   DialogFooter,
 } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
+import { AnalysisTabs, type AnalysisTabValue } from '@/components/layout/analysis-tabs'
 
 export default function HomePage() {
   const rawData = useAppStore(state => state.rawData)
