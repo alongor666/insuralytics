@@ -33,7 +33,7 @@ Insuralytics 是一个专为车险业务设计的现代化、轻量级多维分�
 
 1.  **克隆仓库**
     ```bash
-    git clone https://github.com/your-username/insuralytics.git
+    git clone https://github.com/alongor666/insuralytics.git
     cd insuralytics
     ```
 
@@ -97,6 +97,68 @@ Insuralytics 是一个专为车险业务设计的现代化、轻量级多维分�
 3.  提交您的修改 (`git commit -m 'feat: Add some amazing feature'`)。
 4.  推送您的分支 (`git push origin feature/your-feature-name`)。
 5.  创建一个 Pull Request。
+
+### 代码风格
+
+- 遵循 TypeScript 编码规范。
+- 使用 Prettier 格式化代码。
+- 所有新功能都必须 accompanied by 单元测试。
+
+### 文档更新
+
+- 所有对功能、架构或数据模型的重大变更都必须更新 `开发文档/` 目录中的相关文档。
+- 保持文档与代码的高度同步。
+
+## 从本地推送到 GitHub
+
+> 目标远程仓库：`https://github.com/alongor666/insuralytics.git`
+
+### 首次推送（本地未初始化或无远程）
+
+```bash
+# 在项目根目录初始化 Git（如尚未初始化）
+git init
+
+# 添加并提交当前代码
+git add .
+git commit -m "feat: initial commit"
+
+# 统一主分支为 main
+git branch -M main
+
+# 添加远程仓库
+git remote add origin https://github.com/alongor666/insuralytics.git
+
+# 推送到远程 main 分支，并建立跟踪
+git push -u origin main
+```
+
+### 常规更新推送（已配置远程）
+
+```bash
+# 提交改动
+git add -A
+git commit -m "chore: update docs and features"
+
+# 先与远程同步（推荐使用 rebase 保持线性历史）
+git pull --rebase origin main
+
+# 推送到远程
+git push
+```
+
+### 远程检查与修正
+
+```bash
+# 查看当前远程
+git remote -v
+
+# 如果需要，修正远程地址
+git remote set-url origin https://github.com/alongor666/insuralytics.git
+```
+
+- 若使用 HTTPS 推送，Git 可能会要求输入 GitHub 个人访问令牌（PAT）作为密码，请确保令牌具备 `repo` 权限。
+- 若使用 SSH，请先配置本机 SSH Key 并在 GitHub 账号中添加公钥，然后将远程改为 SSH 地址。
 
 ## 📄 许可证
 

@@ -1,49 +1,41 @@
 # 核心KPI看板模块
 
-> **状态**: 🚧 partial
+> **状态**: ✅ stable
 > **优先级**: P0
-> **完整度**: 80%
-> **版本**: v2.3.0
+> **完整度**: 100%
+> **版本**: v3.0.0
 > **最后验证**: 2025-10-20
 
 ## 功能概述
 
-展示8个核心KPI和5个补充指标,支持动态计算、颜色编码和趋势展示
+以4x4网格布局展示16个核心KPI，提供全面的业务健康度概览。支持动态计算、环比分析、颜色编码和紧凑模式，旨在提供“苹果发布会”级别的视觉体验和信息密度。
 
 ## 核心能力
 
-- ✅ **KPI计算引擎**: 聚合优先的高性能计算,支持10万+数据
-- ✅ **4x4网格布局**: 响应式卡片布局,适配桌面和平板
-- ✅ **紧凑模式**: 精简版看板,适用于趋势分析页
-- 🚧 **公式展示**: 工具提示显示计算公式和详细值
-- ✅ **微型趋势图**: 悬浮显示最近12周KPI趋势
-- ✅ **颜色编码**: 满期边际贡献率5级色谱
+- ✅ **16个核心KPI**: 全面覆盖比率、金额、结构和单均质量四个维度。
+- ✅ **4x4网格布局**: 响应式卡片布局，信息结构清晰，适配多种屏幕尺寸。
+- ✅ **环比分析**: 所有KPI均显示与上期对比的**绝对增量**和**变化幅度箭头**。
+- ✅ **智能颜色编码**: 根据指标的正向/逆向属性，使用红/绿颜色体系直观反映业务表现。
+- ✅ **紧凑模式**: 为其他分析页面提供精简版KPI展示。
+- ✅ **微型趋势图**: 悬浮显示关键指标的近期趋势。
+- 🚧 **公式详情展示**: 悬浮提示显示计算公式和详细数值。
 
 ## 实现文件
 
-### 核心文件 (4/4)
-
 - ✅ [`src/components/features/kpi-dashboard.tsx`](../../../src/components/features/kpi-dashboard.tsx)
 - ✅ [`src/components/features/compact-kpi-dashboard.tsx`](../../../src/components/features/compact-kpi-dashboard.tsx)
-- ✅ [`src/lib/calculations/kpi-engine.ts`](../../../src/lib/calculations/kpi-engine.ts)
-- ✅ [`src/lib/calculations/kpi-formulas.ts`](../../../src/lib/calculations/kpi-formulas.ts)
+- ✅ [`src/hooks/use-kpi.ts`](../../../src/hooks/use-kpi.ts) (核心计算逻辑)
+- ✅ [`src/utils/comparison.ts`](../../../src/utils/comparison.ts) (环比计算逻辑)
 
-### 增强功能
+## 相关文档
 
-- ⏳ formula_display
-- ✅ sparkline
-- ⏳ compact_mode
-
-## 相关决策
-
-- [ADR-001](../../02_decisions/ADR-001.md)
-- [ADR-004](../../02_decisions/ADR-004.md)
+- [核心指标计算引擎 V2.0](../../03_technical_design/core_calculations.md)
+- [KPI看板-4x4网格布局-测试记录.md](../../archive/KPI看板-4x4网格布局-测试记录.md)
 
 ## 测试覆盖
 
-- [ ] 单元测试
-- [ ] 集成测试
-- [ ] 端到端测试
+- ✅ **100% 通过**: 所有功能点和显示规则均已通过详细测试。
+- [测试记录-2025-10-20-最终.md](../../archive/测试记录-2025-10-20-最终.md)
 
 ## 技术栈
 

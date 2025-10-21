@@ -1,6 +1,11 @@
 'use client'
 
-import { Download, FileSpreadsheet, FileText, Image } from 'lucide-react'
+import {
+  Download,
+  FileSpreadsheet,
+  FileText,
+  Image as ImageIcon,
+} from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import {
   Dialog,
@@ -194,7 +199,7 @@ export function DataExport() {
           <div className="p-4 border border-slate-200 rounded-lg bg-slate-50">
             <div className="flex items-start gap-3 mb-3">
               <div className="mt-1">
-                <Image className="w-5 h-5 text-purple-600" />
+                <ImageIcon className="w-5 h-5 text-purple-600" />
               </div>
               <div className="flex-1">
                 <h4 className="font-medium text-slate-800">导出图表图片</h4>

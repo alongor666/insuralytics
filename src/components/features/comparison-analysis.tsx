@@ -1,6 +1,6 @@
 'use client'
 
-import { TrendingUp, Building2, PieChart as PieChartIcon } from 'lucide-react'
+import { Building2, PieChart as PieChartIcon } from 'lucide-react'
 import {
   useOrganizationComparison,
   useInsuranceTypeStructure,

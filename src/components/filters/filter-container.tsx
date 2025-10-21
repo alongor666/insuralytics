@@ -17,16 +17,16 @@ export function FilterContainer({
 }: FilterContainerProps) {
   return (
     <div className="space-y-3">
-      <div className="flex items-center justify-between">
-        <h3 className="text-sm font-medium text-slate-700">{title}</h3>
+      <div className="flex items-center justify-between border-b border-slate-200 pb-2.5">
+        <h3 className="text-sm font-bold text-slate-800">{title}</h3>
         {onReset && (
           <Button
             variant="ghost"
             size="sm"
             onClick={onReset}
-            className="h-6 px-2 text-xs text-slate-500 hover:text-slate-700"
+            className="h-7 gap-1 rounded-lg px-2.5 text-xs font-medium text-slate-600 hover:bg-red-50 hover:text-red-600"
           >
-            <X className="mr-1 h-3 w-3" />
+            <X className="h-3.5 w-3.5" />
             清除
           </Button>
         )}

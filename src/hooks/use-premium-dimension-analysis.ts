@@ -1,6 +1,6 @@
 import { useMemo } from 'react'
 import { useAppStore } from '@/store/use-app-store'
-import type { InsuranceRecord, FilterState } from '@/types/insurance'
+import type { InsuranceRecord } from '@/types/insurance'
 import { useFilteredData, applyFilters } from './use-filtered-data'
 import { buildPreviousFilters } from './utils/filter-helpers'
 
@@ -45,7 +45,9 @@ function normalizeDimensionValue(
         ? { key: 'transferred', label: '过户车' }
         : { key: 'non_transferred', label: '非过户车' }
     default: {
-      const rawValue = (record as unknown as Record<string, unknown>)[dimensionKey]
+      const rawValue = (record as unknown as Record<string, unknown>)[
+        dimensionKey
+      ]
       const isEmpty =
         rawValue === null ||
         rawValue === undefined ||

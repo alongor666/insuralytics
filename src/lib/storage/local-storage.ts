@@ -31,7 +31,7 @@ function isLocalStorageAvailable(): boolean {
     localStorage.setItem(test, test)
     localStorage.removeItem(test)
     return true
-  } catch (e) {
+  } catch {
     return false
   }
 }
@@ -64,12 +64,12 @@ function clearExpiredData(): void {
       try {
         const value = localStorage.getItem(key)
         if (value) {
-          const item: StorageItem<any> = JSON.parse(value)
+          const item: StorageItem<unknown> = JSON.parse(value)
           if (item.expiry && now > item.timestamp + item.expiry) {
             keysToRemove.push(key)
           }
         }
-      } catch (e) {
+      } catch {
         // 数据格式错误,也删除
         keysToRemove.push(key)
       }

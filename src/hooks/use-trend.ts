@@ -57,18 +57,61 @@ export function useTrendData(): TrendPoint[] {
   const targetForScope = useMemo(() => {
     if (!premiumTargets) return null
 
+    // 优先级：业务类型 > 三级机构 > 客户分类 > 保险类型 > 总体目标
+
+    // 1. 业务类型目标
     if (filters.businessTypes.length > 0) {
       const sum = filters.businessTypes.reduce((acc, type) => {
         const normalized = normalizeChineseText(type)
-        return acc + (premiumTargets.byBusinessType[normalized] ?? 0)
+        return (
+          acc +
+          (premiumTargets.dimensions.businessType.entries[normalized] ?? 0)
+        )
       }, 0)
-      if (sum > 0) {
-        return sum
-      }
+      if (sum > 0) return sum
     }
 
+    // 2. 三级机构目标
+    if (filters.organizations.length > 0) {
+      const sum = filters.organizations.reduce((acc, org) => {
+        const normalized = normalizeChineseText(org)
+        return (
+          acc +
+          (premiumTargets.dimensions.thirdLevelOrganization.entries[
+            normalized
+          ] ?? 0)
+        )
+      }, 0)
+      if (sum > 0) return sum
+    }
+
+    // 3. 客户分类目标
+    if (filters.customerCategories.length > 0) {
+      const sum = filters.customerCategories.reduce((acc, category) => {
+        const normalized = normalizeChineseText(category)
+        return (
+          acc +
+          (premiumTargets.dimensions.customerCategory.entries[normalized] ?? 0)
+        )
+      }, 0)
+      if (sum > 0) return sum
+    }
+
+    // 4. 保险类型目标
+    if (filters.insuranceTypes.length > 0) {
+      const sum = filters.insuranceTypes.reduce((acc, type) => {
+        const normalized = normalizeChineseText(type)
+        return (
+          acc +
+          (premiumTargets.dimensions.insuranceType.entries[normalized] ?? 0)
+        )
+      }, 0)
+      if (sum > 0) return sum
+    }
+
+    // 5. 总体目标
     return premiumTargets.overall > 0 ? premiumTargets.overall : null
-  }, [filters.businessTypes, premiumTargets])
+  }, [filters, premiumTargets])
 
   const series = useMemo(() => {
     if (filtered.length === 0) return []
@@ -121,7 +164,7 @@ export function useTrendData(): TrendPoint[] {
     }
 
     return points
-  }, [filtered, filters.years, dataViewType])
+  }, [filtered, filters.years, dataViewType, targetForScope])
 
   return series
 }

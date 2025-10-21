@@ -16,6 +16,7 @@ import {
   useProductStructure,
 } from '@/hooks/use-aggregation'
 import { formatNumber } from '@/utils/format'
+import type { LegendPayload } from 'recharts/types/component/Legend'
 
 // 使用React.memo优化组件性能
 export const StructureBarChart = React.memo(function StructureBarChart() {
@@ -50,19 +51,6 @@ export const StructureBarChart = React.memo(function StructureBarChart() {
     return list.slice(0, Math.max(1, Math.min(50, topN)))
   }, [raw, sortBy, topN])
 
-  // 事件处理函数
-  const handleModeChange = (newMode: 'org' | 'product') => {
-    setMode(newMode)
-  }
-
-  const handleSortChange = (newSort: 'matured' | 'signed' | 'count') => {
-    setSortBy(newSort)
-  }
-
-  const handleTopNChange = (newTopN: number) => {
-    setTopN(newTopN)
-  }
-
   if (!data || data.length === 0) return null
 
   const chartId = mode === 'org' ? 'organization-chart' : 'product-chart'
@@ -95,7 +83,9 @@ export const StructureBarChart = React.memo(function StructureBarChart() {
             <select
               className="border border-slate-300 rounded px-2 py-1 bg-white"
               value={sortBy}
-              onChange={e => setSortBy(e.target.value as any)}
+              onChange={e =>
+                setSortBy(e.target.value as 'matured' | 'signed' | 'count')
+              }
             >
               <option value="matured">满期保费</option>
               <option value="signed">签单保费</option>
@@ -131,15 +121,19 @@ export const StructureBarChart = React.memo(function StructureBarChart() {
               width={120}
               tick={{ fontSize: 12 }}
             />
-            <Tooltip formatter={(val: any) => formatNumber(val as number, 2)} />
+            <Tooltip
+              formatter={(value: number | string) =>
+                formatNumber(Number(value), 2)
+              }
+            />
             <Legend
-              onClick={(e: any) => {
-                const name: string = e?.value || ''
+              onClick={(payload: LegendPayload) => {
+                const name = payload?.value ?? ''
                 const key = name.includes('满期') ? 'matured' : 'signed'
                 setVisible(v => ({ ...v, [key]: !v[key as keyof typeof v] }))
               }}
-              onMouseEnter={(e: any) => {
-                const name: string = e?.value || ''
+              onMouseEnter={(payload: LegendPayload) => {
+                const name = payload?.value ?? ''
                 setActiveSeries(name.includes('满期') ? 'matured' : 'signed')
               }}
               onMouseLeave={() => setActiveSeries(null)}

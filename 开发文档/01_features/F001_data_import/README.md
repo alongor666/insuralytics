@@ -1,54 +1,50 @@
 # 数据上传与解析模块
 
-> **状态**: 🚧 partial
+> **状态**: ✅ stable
 > **优先级**: P0
-> **完整度**: 80%
-> **版本**: v2.1.0
+> **完整度**: 95%
+> **版本**: v2.2.0
 > **最后验证**: 2025-10-20
 
 ## 功能概述
 
-提供CSV/JSON文件上传、解析、验证和预处理能力,支持批量导入和智能纠错
+提供CSV文件上传、解析、验证和预处理能力，确保数据严格符合26个字段的规范，支持批量导入和智能纠错。
 
 ## 核心能力
 
-- ✅ **文件上传**: 支持拖拽和点击上传,最大200MB
-- ✅ **CSV流式解析**: 使用Papa Parse分块处理,避免内存溢出
-- ✅ **数据验证**: 基于Zod Schema的26字段验证
-- ✅ **智能纠错**: 模糊匹配修正枚举值错误
-- 🚧 **批量导入**: 并行处理多文件上传
-- 🚧 **错误详情展示**: 友好的错误列表和修复建议
+- ✅ **文件上传**: 支持拖拽和点击上传，最大200MB。
+- ✅ **CSV流式解析**: 使用Papa Parse分块处理，避免内存溢出。
+- ✅ **严格数据验证**: 内置于解析器，对26个字段的**结构、顺序、类型和枚举值**进行严格验证。
+- ✅ **智能纠错**: 对已知的枚举值变体进行模糊匹配和自动修正。
+- ✅ **错误详情展示**: 提供友好的错误列表和修复建议。
+- 🚧 **批量导入**: 支持并行处理多个文件上传。
 
 ## 实现文件
 
-### 核心文件 (4/4)
+### 核心文件 (3/3)
 
 - ✅ [`src/components/features/file-upload.tsx`](../../../src/components/features/file-upload.tsx)
-- ✅ [`src/lib/parsers/csv-parser.ts`](../../../src/lib/parsers/csv-parser.ts)
-- ✅ [`src/lib/validations/insurance-schema.ts`](../../../src/lib/validations/insurance-schema.ts)
+- ✅ [`src/lib/parsers/csv-parser.ts`](../../../src/lib/parsers/csv-parser.ts) (内置验证逻辑)
 - ✅ [`src/hooks/use-file-upload.ts`](../../../src/hooks/use-file-upload.ts)
 
 ### 增强功能
 
 - ✅ fuzzy_match
 - ⏳ batch_upload
-- ⏳ error_handling
+- ✅ error_handling
 
 ## 相关决策
 
-- [ADR-002](../../02_decisions/ADR-002.md)
-- [ADR-003](../../02_decisions/ADR-003.md)
+- [ADR-002: CSV解析策略-流式处理](../../02_decisions/ADR-002_CSV解析策略-流式处理.md)
 
-## 相关问题
+## 相关文档
 
-- [ISSUE-001](../../archive/问题记录表.md#issue-001)
-- [ISSUE-003](../../archive/问题记录表.md#issue-003)
+- [CSV导入规范](../../archive/CSV导入规范.md)
 
 ## 测试覆盖
 
-- [ ] 单元测试
-- [ ] 集成测试
-- [ ] 端到端测试
+- ✅ **单元/集成测试**: 见 `archive` 目录下的各类测试记录。
+- [测试记录-2025-10-20-最终.md](../../archive/测试记录-2025-10-20-最终.md)
 
 ## 技术栈
 

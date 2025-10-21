@@ -55,10 +55,7 @@ import {
   type LossDimensionKey,
   type LossDimensionItem,
 } from '@/hooks/use-loss-dimension-analysis'
-import {
-  useMarginalContributionAnalysis,
-  type MarginalContributionItem,
-} from '@/hooks/use-marginal-contribution-analysis'
+import { useMarginalContributionAnalysis } from '@/hooks/use-marginal-contribution-analysis'
 
 // ============= 接口定义 =============
 
@@ -245,7 +242,6 @@ interface RatioOverviewCardProps {
   currentKpis: KPIResult | null
   compareKpis?: KPIResult | null
   colorFn: (value: number | null | undefined) => ColorScale
-  positiveChangeIs: 'increase' | 'decrease' // 数值增长是好还是坏
   compact?: boolean
 }
 
@@ -257,7 +253,6 @@ function RatioOverviewCard({
   currentKpis,
   compareKpis,
   colorFn,
-  positiveChangeIs,
   compact = false,
 }: RatioOverviewCardProps) {
   // 获取动态色彩
@@ -1119,7 +1114,7 @@ function MarginAmountGridCard({
           'font-bold text-slate-800'
         )}
       >
-        {value !== null ? `${formatNumber(value, decimals)}` : '-'}
+        {value !== null ? `${formatNumber(value, decimals)}${unit}` : '-'}
       </p>
 
       {/* 环比变化 */}
@@ -1146,7 +1141,7 @@ function MarginAmountGridCard({
       <div className="mt-2 text-xs text-slate-500">
         上期：
         {previous !== null && previous !== undefined
-          ? `${formatNumber(previous, decimals)}`
+          ? `${formatNumber(previous, decimals)}${unit}`
           : '—'}
       </div>
     </div>
@@ -1593,6 +1588,13 @@ function ContributionAnalysisTab({ compact = false }: TabContentProps) {
       )}
     </div>
   )
+}
+
+// 内部组件的引用集合，便于调试和防止被摇树优化移除
+export const ThematicAnalysisInternals = {
+  TimeProgressAnalysisCard,
+  RatioOverviewCard,
+  TrendAnalysisCard,
 }
 
 // ============= 主组件 =============

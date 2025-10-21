@@ -26,10 +26,9 @@ import {
   ZAxis,
   Cell,
   ReferenceLine,
-  Label,
 } from 'recharts'
+import type { TooltipProps } from 'recharts'
 import { useFilteredData } from '@/hooks/use-filtered-data'
-import { useAppStore } from '@/store/use-app-store'
 import { InsuranceRecord } from '@/types/insurance'
 import { formatNumber, formatPercent } from '@/utils/format'
 
@@ -171,8 +170,8 @@ export function CustomerSegmentationBubble({ className }: Props) {
   }, [bubbleData])
 
   // 自定义 Tooltip
-  const CustomTooltip = ({ active, payload }: any) => {
-    if (!active || !payload || payload.length === 0) return null
+  const CustomTooltip = ({ active, payload }: TooltipProps<number, string>) => {
+    if (!active || !payload?.length) return null
 
     const data = payload[0].payload as BubbleDataPoint
 
@@ -331,10 +330,7 @@ export function CustomerSegmentationBubble({ className }: Props) {
             />
             <Legend
               wrapperStyle={{ paddingTop: '20px' }}
-              formatter={(value, entry: any) => {
-                const count = bubbleData.filter(d => d.name === value).length
-                return value
-              }}
+              formatter={(value: string) => value}
             />
 
             <Scatter name="客户群" data={bubbleData} fill="#8884d8">

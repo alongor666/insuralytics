@@ -149,6 +149,73 @@ export interface KPIResult {
 /**
  * 保费目标配置
  */
+export type TargetDimensionKey =
+  | 'businessType'
+  | 'thirdLevelOrganization'
+  | 'customerCategory'
+  | 'insuranceType'
+
+export const TARGET_DIMENSIONS: TargetDimensionKey[] = [
+  'businessType',
+  'thirdLevelOrganization',
+  'customerCategory',
+  'insuranceType',
+]
+
+export interface TargetVersionSnapshot {
+  /**
+   * 版本唯一标识
+   */
+  id: string
+
+  /**
+   * 版本名称（默认使用时间戳，可由用户自定义）
+   */
+  label: string
+
+  /**
+   * 创建时间
+   */
+  createdAt: string
+
+  /**
+   * 适用年度目标总额（单位：元）
+   */
+  overall: number
+
+  /**
+   * 各项目标快照（单位：元）
+   */
+  entries: Record<string, number>
+
+  /**
+   * 可选备注
+   */
+  note?: string
+}
+
+export interface DimensionTargetState {
+  /**
+   * 当前版本的目标配额（单位：元，key 为规范化后的实体文本）
+   */
+  entries: Record<string, number>
+
+  /**
+   * 当前版本更新时间（ISO 字符串）
+   */
+  updatedAt: string | null
+
+  /**
+   * 历史版本记录（最新版本排在前面）
+   */
+  versions: TargetVersionSnapshot[]
+}
+
+export type DimensionTargetMap = Record<
+  TargetDimensionKey,
+  DimensionTargetState
+>
+
 export interface PremiumTargets {
   /**
    * 适用年度
@@ -161,9 +228,14 @@ export interface PremiumTargets {
   overall: number
 
   /**
-   * 各业务类型年度保费目标（单位：元，key 为规范化后的 business_type_category 文本）
+   * 各业务类型年度保费目标（单位：元，向后兼容字段）
    */
   byBusinessType: Record<string, number>
+
+  /**
+   * 多维度目标配额
+   */
+  dimensions: DimensionTargetMap
 
   /**
    * 最后更新时间（ISO 字符串）

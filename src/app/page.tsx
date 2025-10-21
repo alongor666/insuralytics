@@ -2,7 +2,8 @@
 
 import { Database } from 'lucide-react'
 import { FileUpload } from '@/components/features/file-upload'
-import { CompactKPIDashboard } from '@/components/features/compact-kpi-dashboard'
+import { FullKPIDashboard } from '@/components/features/full-kpi-dashboard'
+import { TimeProgressIndicator } from '@/components/features/time-progress-indicator'
 import { TrendChart } from '@/components/features/trend-chart'
 import { StructureBarChart } from '@/components/features/structure-bar-chart'
 import { DistributionPieChart } from '@/components/features/distribution-pie-chart'
@@ -27,6 +28,7 @@ import { Toaster } from '@/components/ui/toaster'
 import { useAppStore } from '@/store/use-app-store'
 import { useKPI } from '@/hooks/use-kpi'
 import { usePersistData } from '@/hooks/use-persist-data'
+import { useSmartComparison } from '@/hooks/use-smart-comparison'
 import { useState, useEffect, useMemo } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import {
@@ -38,18 +40,46 @@ import {
   DialogFooter,
 } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
-import { AnalysisTabs, type AnalysisTabValue } from '@/components/layout/analysis-tabs'
+import {
+  AnalysisTabs,
+  type AnalysisTabValue,
+} from '@/components/layout/analysis-tabs'
+import { ForecastPanel } from '@/components/features/forecast-panel'
+import { PredictionManagerPanel } from '@/components/features/prediction-manager'
 
 export default function HomePage() {
   const rawData = useAppStore(state => state.rawData)
   const setViewMode = useAppStore(state => state.setViewMode)
   const kpiData = useKPI()
+  const premiumTargetsOverall = useAppStore(
+    state => state.premiumTargets?.overall
+  )
+
+  // 使用智能环比数据（优化参数以避免无限重渲染）
+  const smartComparisonOptions = useMemo(
+    () => ({
+      annualTargetYuan: premiumTargetsOverall || null,
+    }),
+    [premiumTargetsOverall]
+  )
+  const { currentKpi, compareKpi, previousWeekNumber } =
+    useSmartComparison(smartComparisonOptions)
+
   const [showFilters, setShowFilters] = useState(false)
   const [mounted, setMounted] = useState(false)
   const router = useRouter()
   const searchParams = useSearchParams()
-  const initialTabParam = (searchParams?.get('tab') as AnalysisTabValue | null) ?? 'kpi'
-  const validTabs: AnalysisTabValue[] = ['kpi', 'trend', 'thematic', 'multichart', 'targets']
+  const initialTabParam =
+    (searchParams?.get('tab') as AnalysisTabValue | null) ?? 'kpi'
+  const validTabs: AnalysisTabValue[] = [
+    'kpi',
+    'trend',
+    'thematic',
+    'multichart',
+    'forecast',
+    'prediction',
+    'targets',
+  ]
   const initialTab: AnalysisTabValue = validTabs.includes(initialTabParam)
     ? initialTabParam
     : 'kpi'
@@ -100,7 +130,7 @@ export default function HomePage() {
     }
 
     setActiveTab(tab)
-    setViewMode(tab === 'trend' ? 'trend' : 'single')
+    setViewMode(tab === 'trend' || tab === 'forecast' ? 'trend' : 'single')
 
     if (tab === 'kpi') {
       router.replace('/', { scroll: false })
@@ -141,13 +171,20 @@ export default function HomePage() {
             </div>
           )}
 
-          {/* 顶部工具栏 - 放置在统一导航之下 */}
+          {/* 顶部工具栏和时间进度 - 放置在统一导航之下 */}
           {hasData && (
-            <TopToolbar
-              showFilters={showFilters}
-              onToggleFilters={() => setShowFilters(!showFilters)}
-              rawCount={rawData.length}
-            />
+            <div className="mb-4 flex items-start gap-4">
+              <div className="flex-1">
+                <TopToolbar
+                  showFilters={showFilters}
+                  onToggleFilters={() => setShowFilters(!showFilters)}
+                  rawCount={rawData.length}
+                />
+              </div>
+              <div className="w-80">
+                <TimeProgressIndicator />
+              </div>
+            </div>
           )}
         </div>
       </header>
@@ -170,11 +207,23 @@ export default function HomePage() {
 
         {hasData && (
           <div className="space-y-8">
-            {/* KPI 看板 */}
-            {activeTab === 'kpi' && <CompactKPIDashboard kpiData={kpiData} />}
+            {/* KPI 看板 - 使用完整版 */}
+            {activeTab === 'kpi' && (
+              <FullKPIDashboard
+                kpiData={currentKpi || kpiData}
+                compareData={compareKpi}
+                compareWeekNumber={previousWeekNumber}
+              />
+            )}
 
             {/* 多周趋势分析 */}
             {activeTab === 'trend' && <TrendChart />}
+
+            {/* 预测分析 */}
+            {activeTab === 'forecast' && <ForecastPanel />}
+
+            {/* 预测管理 */}
+            {activeTab === 'prediction' && <PredictionManagerPanel />}
 
             {/* 专题分析模块 */}
             {activeTab === 'thematic' && (

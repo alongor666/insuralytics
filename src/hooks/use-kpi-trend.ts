@@ -6,7 +6,7 @@
 import { useMemo, useRef } from 'react'
 import { useAppStore } from '@/store/use-app-store'
 import { calculateKPIs } from '@/lib/calculations/kpi-engine'
-import type { InsuranceRecord } from '@/types/insurance'
+import type { InsuranceRecord, FilterState } from '@/types/insurance'
 
 /**
  * KPI趋势数据点
@@ -36,19 +36,21 @@ function generateCacheKey(
 /**
  * 生成筛选器哈希
  */
-function generateFiltersHash(filters: any): string {
+function generateFiltersHash(filters: FilterState): string {
+  const sortValues = <T>(values: T[]): T[] => [...values].sort()
+
   return JSON.stringify({
-    years: filters.years.sort(),
-    weeks: filters.weeks.sort(),
-    organizations: filters.organizations.sort(),
-    insuranceTypes: filters.insuranceTypes.sort(),
-    businessTypes: filters.businessTypes.sort(),
-    coverageTypes: filters.coverageTypes.sort(),
-    customerCategories: filters.customerCategories.sort(),
-    vehicleGrades: filters.vehicleGrades.sort(),
-    terminalSources: filters.terminalSources.sort(),
+    years: sortValues(filters.years),
+    weeks: sortValues(filters.weeks),
+    organizations: sortValues(filters.organizations),
+    insuranceTypes: sortValues(filters.insuranceTypes),
+    businessTypes: sortValues(filters.businessTypes),
+    coverageTypes: sortValues(filters.coverageTypes),
+    customerCategories: sortValues(filters.customerCategories),
+    vehicleGrades: sortValues(filters.vehicleGrades),
+    terminalSources: sortValues(filters.terminalSources),
     isNewEnergy: filters.isNewEnergy,
-    renewalStatuses: filters.renewalStatuses.sort(),
+    renewalStatuses: sortValues(filters.renewalStatuses),
   })
 }
 
@@ -57,12 +59,13 @@ function generateFiltersHash(filters: any): string {
  * @param data 保险数据
  * @param kpiKey KPI键名
  * @param limit 返回最近几周的数据（默认12周）
+ * @returns 趋势数据数组，null表示该周无数据（断点）
  */
 function calculateKPITrend(
   data: InsuranceRecord[],
   kpiKey: keyof ReturnType<typeof calculateKPIs>,
   limit = 12
-): number[] {
+): (number | null)[] {
   if (!data || data.length === 0) {
     return []
   }
@@ -85,13 +88,17 @@ function calculateKPITrend(
   const recentWeeks = weeks.slice(-limit)
 
   // 计算每周的KPI值
+  // 支持断点显示：如果某周无数据，返回null（而非0）
   const trendData = recentWeeks.map(weekKey => {
     const weekRecords = weeklyData.get(weekKey) || []
+    if (weekRecords.length === 0) {
+      return null // 该周无数据，趋势图将显示断点
+    }
     const kpi = calculateKPIs(weekRecords)
     const value = kpi[kpiKey]
 
-    // 处理null值：使用0或者跳过
-    return typeof value === 'number' ? value : 0
+    // 如果计算结果为null，也保持null
+    return typeof value === 'number' ? value : null
   })
 
   return trendData
@@ -102,7 +109,7 @@ function calculateKPITrend(
  */
 function applyFilters(
   data: InsuranceRecord[],
-  filters: any
+  filters: FilterState
 ): InsuranceRecord[] {
   return data.filter(record => {
     // 年度筛选

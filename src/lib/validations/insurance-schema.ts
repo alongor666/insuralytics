@@ -203,10 +203,11 @@ export type InsuranceRecordInput = z.infer<typeof InsuranceRecordSchema>
 /**
  * 验证单条记录
  */
-export function validateRecord(
-  record: unknown,
-  index?: number
-): { valid: boolean; data?: InsuranceRecordInput; errors?: string[] } {
+export function validateRecord(record: unknown): {
+  valid: boolean
+  data?: InsuranceRecordInput
+  errors?: string[]
+} {
   try {
     const validated = InsuranceRecordSchema.parse(record)
     return {
@@ -246,7 +247,7 @@ export function validateRecords(records: unknown[]): {
 } {
   const results = records.map((record, index) => ({
     index,
-    ...validateRecord(record, index),
+    ...validateRecord(record),
   }))
 
   const validResults = results.filter(r => r.valid)

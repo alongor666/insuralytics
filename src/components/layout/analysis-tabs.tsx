@@ -7,7 +7,9 @@ export type AnalysisTabValue =
   | 'trend'
   | 'thematic'
   | 'multichart'
+  | 'forecast'
   | 'targets'
+  | 'prediction'
 
 interface AnalysisTabsProps {
   active: AnalysisTabValue
@@ -19,6 +21,8 @@ const TAB_ITEMS: Array<{ value: AnalysisTabValue; label: string }> = [
   { value: 'trend', label: '周趋势分析' },
   { value: 'thematic', label: '专题分析' },
   { value: 'multichart', label: '多维图表' },
+  { value: 'forecast', label: '预测分析' },
+  { value: 'prediction', label: '预测管理' },
   { value: 'targets', label: '目标管理' },
 ]
 

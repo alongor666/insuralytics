@@ -5,6 +5,10 @@ import { MultiSelectFilter } from './multi-select-filter'
 import { useAppStore } from '@/store/use-app-store'
 import { filterRecordsWithExclusions } from '@/store/use-app-store'
 import { normalizeChineseText } from '@/lib/utils'
+import {
+  CANONICAL_INSURANCE_TYPES,
+  CANONICAL_COVERAGE_TYPES,
+} from '@/constants/dimensions'
 
 export function ProductFilter() {
   const filters = useAppStore(state => state.filters)
@@ -17,11 +21,15 @@ export function ProductFilter() {
     filters,
     ['insuranceTypes']
   )
-  const availableInsuranceTypes = Array.from(
-    new Set(recordsForInsuranceType.map(record => record.insurance_type))
+  const presentInsuranceTypes = new Set<string>(
+    recordsForInsuranceType
+      .map(record => String(record.insurance_type))
+      .filter((v): v is string => Boolean(v))
   )
-    .filter(type => type)
-    .sort()
+  const availableInsuranceTypes = CANONICAL_INSURANCE_TYPES.filter(type =>
+    presentInsuranceTypes.has(type)
+  )
+    .sort((a, b) => a.localeCompare(b, 'zh-CN'))
     .map(type => ({ label: type, value: type }))
 
   // 联动：根据其他筛选条件提取唯一的业务类型（规范化去重）
@@ -43,11 +51,15 @@ export function ProductFilter() {
   const recordsForCoverageType = filterRecordsWithExclusions(rawData, filters, [
     'coverageTypes',
   ])
-  const availableCoverageTypes = Array.from(
-    new Set(recordsForCoverageType.map(record => record.coverage_type))
+  const presentCoverageTypes = new Set<string>(
+    recordsForCoverageType
+      .map(record => String(record.coverage_type))
+      .filter((v): v is string => Boolean(v))
   )
-    .filter(type => type)
-    .sort()
+  const availableCoverageTypes = CANONICAL_COVERAGE_TYPES.filter(type =>
+    presentCoverageTypes.has(type)
+  )
+    .sort((a, b) => a.localeCompare(b, 'zh-CN'))
     .map(type => ({ label: type, value: type }))
 
   const handleInsuranceTypeChange = (types: string[]) => {
@@ -55,7 +67,7 @@ export function ProductFilter() {
   }
 
   const handleBusinessTypeChange = (types: string[]) => {
-    updateFilters({ businessTypes: types.map(normalizeChineseText) })
+    updateFilters({ businessTypes: types })
   }
 
   const handleCoverageTypeChange = (types: string[]) => {
@@ -72,51 +84,53 @@ export function ProductFilter() {
     filters.coverageTypes.length > 0
 
   return (
-    <FilterContainer
-      title="产品维度"
-      onReset={hasFilters ? handleReset : undefined}
-    >
-      <div className="space-y-3">
-        <div>
-          <label className="mb-1.5 block text-xs text-slate-600">
-            保险类型
-          </label>
-          <MultiSelectFilter
-            options={availableInsuranceTypes}
-            selectedValues={filters.insuranceTypes}
-            onChange={handleInsuranceTypeChange}
-            placeholder="选择险种"
-            searchPlaceholder="搜索险种..."
-            emptyText="未找到险种"
-          />
+    <div className="rounded-2xl border-2 border-slate-200 bg-white p-5">
+      <FilterContainer
+        title="产品维度"
+        onReset={hasFilters ? handleReset : undefined}
+      >
+        <div className="space-y-4">
+          <div>
+            <label className="mb-2 block text-sm font-medium text-slate-700">
+              保险类型
+            </label>
+            <MultiSelectFilter
+              options={availableInsuranceTypes}
+              selectedValues={filters.insuranceTypes}
+              onChange={handleInsuranceTypeChange}
+              placeholder="选择险种"
+              searchPlaceholder="搜索险种..."
+              emptyText="未找到险种"
+            />
+          </div>
+          <div>
+            <label className="mb-2 block text-sm font-medium text-slate-700">
+              业务类型
+            </label>
+            <MultiSelectFilter
+              options={availableBusinessTypes}
+              selectedValues={filters.businessTypes}
+              onChange={handleBusinessTypeChange}
+              placeholder="选择业务类型"
+              searchPlaceholder="搜索业务类型..."
+              emptyText="未找到业务类型"
+            />
+          </div>
+          <div>
+            <label className="mb-2 block text-sm font-medium text-slate-700">
+              险别组合
+            </label>
+            <MultiSelectFilter
+              options={availableCoverageTypes}
+              selectedValues={filters.coverageTypes}
+              onChange={handleCoverageTypeChange}
+              placeholder="选择险别组合"
+              searchPlaceholder="搜索险别组合..."
+              emptyText="未找到险别组合"
+            />
+          </div>
         </div>
-        <div>
-          <label className="mb-1.5 block text-xs text-slate-600">
-            业务类型
-          </label>
-          <MultiSelectFilter
-            options={availableBusinessTypes}
-            selectedValues={filters.businessTypes}
-            onChange={handleBusinessTypeChange}
-            placeholder="选择业务类型"
-            searchPlaceholder="搜索业务类型..."
-            emptyText="未找到业务类型"
-          />
-        </div>
-        <div>
-          <label className="mb-1.5 block text-xs text-slate-600">
-            险别组合
-          </label>
-          <MultiSelectFilter
-            options={availableCoverageTypes}
-            selectedValues={filters.coverageTypes}
-            onChange={handleCoverageTypeChange}
-            placeholder="选择险别组合"
-            searchPlaceholder="搜索险别组合..."
-            emptyText="未找到险别组合"
-          />
-        </div>
-      </div>
-    </FilterContainer>
+      </FilterContainer>
+    </div>
   )
 }

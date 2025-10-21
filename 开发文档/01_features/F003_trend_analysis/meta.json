@@ -1,16 +1,17 @@
 {
   "id": "F003",
   "name": "趋势分析图表模块",
-  "status": "partial",
+  "status": "beta",
   "priority": "P0",
-  "completeness": 70,
-  "version": "v1.3.0",
-  "last_updated": "2025-10-20",
-  "last_verified": "2025-10-20",
+  "completeness": 95,
+  "version": "v2.0.0",
+  "last_updated": "2025-10-21",
+  "last_verified": "2025-10-21",
   "core_files": [
     "src/components/features/trend-chart.tsx",
     "src/lib/analytics/anomaly-detection.ts",
-    "src/lib/analytics/trend-fitting.ts"
+    "src/lib/analytics/trend-fitting.ts",
+    "src/hooks/use-trend.ts"
   ],
   "related_decisions": [
     "ADR-004"

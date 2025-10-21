@@ -14,7 +14,6 @@ import {
   Info,
   Download,
   Search,
-  Filter,
   BarChart3,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
@@ -82,7 +81,7 @@ export function UploadResultsDetail({
   const allErrorDetails = useMemo((): ErrorDetail[] => {
     const details: ErrorDetail[] = []
 
-    batchResult.results.forEach((result, fileIndex) => {
+    batchResult.results.forEach(result => {
       // 处理成功解析但有错误的文件
       if (result.result?.errors) {
         result.result.errors.forEach(error => {
@@ -412,7 +411,11 @@ export function UploadResultsDetail({
 
               <select
                 value={selectedSeverity}
-                onChange={e => setSelectedSeverity(e.target.value as any)}
+                onChange={e =>
+                  setSelectedSeverity(
+                    e.target.value as 'all' | 'error' | 'warning' | 'info'
+                  )
+                }
                 className="px-3 py-1 border border-slate-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
               >
                 <option value="all">所有级别</option>

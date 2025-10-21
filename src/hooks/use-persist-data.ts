@@ -55,7 +55,7 @@ export function usePersistData() {
     return () => {
       cancelled = true
     }
-  }, []) // 空依赖数组,仅在挂载时执行
+  }, [setRawData, updateFilters]) // 空依赖数组,仅在挂载时执行
 
   // 保存数据到 IndexedDB / localStorage (当数据变化时)
   useEffect(() => {

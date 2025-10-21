@@ -6,14 +6,7 @@
 'use client'
 
 import React, { useState, useCallback } from 'react'
-import {
-  Upload,
-  CheckCircle2,
-  AlertCircle,
-  FileText,
-  X,
-  RefreshCw,
-} from 'lucide-react'
+import { Upload, FileText, X, RefreshCw } from 'lucide-react'
 import { useFileUpload } from '@/hooks/use-file-upload'
 import { Progress } from '@/components/ui/progress'
 import { useToast } from '@/hooks/use-toast'
@@ -46,7 +39,6 @@ export function FileUpload() {
   const [parallelMode, setParallelMode] = useState(true) // 默认启用并行模式
 
   const {
-    status,
     progress,
     batchResult,
     uploadFiles,
@@ -54,8 +46,6 @@ export function FileUpload() {
     resetUpload,
     updateValidationOptions,
     isUploading,
-    isSuccess,
-    isError,
     hasResults,
   } = useFileUpload()
 
@@ -240,8 +230,7 @@ export function FileUpload() {
               正在处理文件...
             </h3>
             <p className="text-sm text-slate-600">
-              {progress.fileName} ({progress.currentFile}/
-              {progress.totalFiles})
+              {progress.fileName} ({progress.currentFile}/{progress.totalFiles})
             </p>
             <p className="text-xs text-slate-500">
               {phaseLabels[progress.currentPhase]}

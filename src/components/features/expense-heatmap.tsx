@@ -14,7 +14,6 @@
 
 import { useMemo } from 'react'
 import { useFilteredData } from '@/hooks/use-filtered-data'
-import { useAppStore } from '@/store/use-app-store'
 import { InsuranceRecord } from '@/types/insurance'
 import { formatPercent, formatCurrency, formatNumber } from '@/utils/format'
 
@@ -40,7 +39,10 @@ interface Props {
 }
 
 // 根据费用率获取颜色和等级
-function getColorByExpenseRatio(ratio: number): { color: string; level: HeatmapCell['level'] } {
+function getColorByExpenseRatio(ratio: number): {
+  color: string
+  level: HeatmapCell['level']
+} {
   if (ratio <= 15) return { color: '#10b981', level: 'excellent' } // 绿色 - 优秀
   if (ratio <= 20) return { color: '#3b82f6', level: 'good' } // 蓝色 - 良好
   if (ratio <= 25) return { color: '#f59e0b', level: 'warning' } // 橙色 - 警告
@@ -48,7 +50,10 @@ function getColorByExpenseRatio(ratio: number): { color: string; level: HeatmapC
 }
 
 // 根据单均费用获取颜色和等级
-function getColorByAverageExpense(expense: number): { color: string; level: HeatmapCell['level'] } {
+function getColorByAverageExpense(expense: number): {
+  color: string
+  level: HeatmapCell['level']
+} {
   if (expense <= 300) return { color: '#10b981', level: 'excellent' }
   if (expense <= 500) return { color: '#3b82f6', level: 'good' }
   if (expense <= 700) return { color: '#f59e0b', level: 'warning' }
@@ -77,12 +82,23 @@ export function ExpenseHeatmap({ className }: Props) {
     const metrics: OrganizationMetrics[] = []
 
     orgMap.forEach((records, org) => {
-      const totalExpense = records.reduce((sum, r) => sum + r.expense_amount_yuan, 0)
-      const totalPremium = records.reduce((sum, r) => sum + r.signed_premium_yuan, 0)
-      const totalPolicyCount = records.reduce((sum, r) => sum + r.policy_count, 0)
+      const totalExpense = records.reduce(
+        (sum, r) => sum + r.expense_amount_yuan,
+        0
+      )
+      const totalPremium = records.reduce(
+        (sum, r) => sum + r.signed_premium_yuan,
+        0
+      )
+      const totalPolicyCount = records.reduce(
+        (sum, r) => sum + r.policy_count,
+        0
+      )
 
-      const expenseRatio = totalPremium > 0 ? (totalExpense / totalPremium) * 100 : 0
-      const averageExpense = totalPolicyCount > 0 ? Math.round(totalExpense / totalPolicyCount) : 0
+      const expenseRatio =
+        totalPremium > 0 ? (totalExpense / totalPremium) * 100 : 0
+      const averageExpense =
+        totalPolicyCount > 0 ? Math.round(totalExpense / totalPolicyCount) : 0
 
       metrics.push({
         organization: org,
@@ -125,9 +141,14 @@ export function ExpenseHeatmap({ className }: Props) {
       })
 
       // 费用金额（使用相对值着色）
-      const maxExpense = organizationMetrics.reduce((max, m) => Math.max(max, m.expenseAmount), 0)
+      const maxExpense = organizationMetrics.reduce(
+        (max, m) => Math.max(max, m.expenseAmount),
+        0
+      )
       const expenseRatioRelative = (org.expenseAmount / maxExpense) * 100
-      const expenseAmountColor = getColorByExpenseRatio(expenseRatioRelative * 0.3) // 缩放到合理范围
+      const expenseAmountColor = getColorByExpenseRatio(
+        expenseRatioRelative * 0.3
+      ) // 缩放到合理范围
       cells.push({
         organization: org.organization,
         metric: '费用金额',
@@ -146,16 +167,24 @@ export function ExpenseHeatmap({ className }: Props) {
 
   // 获取指定机构和指标的单元格
   const getCell = (org: string, metric: string): HeatmapCell | undefined => {
-    return heatmapData.find(cell => cell.organization === org && cell.metric === metric)
+    return heatmapData.find(
+      cell => cell.organization === org && cell.metric === metric
+    )
   }
 
   // 统计分析
   const analysis = useMemo(() => {
     if (organizationMetrics.length === 0) return null
 
-    const avgExpenseRatio = organizationMetrics.reduce((sum, m) => sum + m.expenseRatio, 0) / organizationMetrics.length
-    const maxExpenseRatioOrg = organizationMetrics.reduce((max, m) => m.expenseRatio > max.expenseRatio ? m : max)
-    const minExpenseRatioOrg = organizationMetrics.reduce((min, m) => m.expenseRatio < min.expenseRatio ? m : min)
+    const avgExpenseRatio =
+      organizationMetrics.reduce((sum, m) => sum + m.expenseRatio, 0) /
+      organizationMetrics.length
+    const maxExpenseRatioOrg = organizationMetrics.reduce((max, m) =>
+      m.expenseRatio > max.expenseRatio ? m : max
+    )
+    const minExpenseRatioOrg = organizationMetrics.reduce((min, m) =>
+      m.expenseRatio < min.expenseRatio ? m : min
+    )
 
     const dangerOrgs = organizationMetrics.filter(m => m.expenseRatio > 25)
     const excellentOrgs = organizationMetrics.filter(m => m.expenseRatio <= 15)
@@ -198,7 +227,10 @@ export function ExpenseHeatmap({ className }: Props) {
                 机构
               </th>
               {metrics.map(metric => (
-                <th key={metric} className="border bg-gray-50 px-4 py-3 text-center font-semibold text-gray-700 min-w-[120px]">
+                <th
+                  key={metric}
+                  className="border bg-gray-50 px-4 py-3 text-center font-semibold text-gray-700 min-w-[120px]"
+                >
                   {metric}
                 </th>
               ))}
@@ -206,7 +238,10 @@ export function ExpenseHeatmap({ className }: Props) {
           </thead>
           <tbody>
             {organizationMetrics.map((org, idx) => (
-              <tr key={org.organization} className={idx % 2 === 0 ? 'bg-white' : 'bg-gray-50/50'}>
+              <tr
+                key={org.organization}
+                className={idx % 2 === 0 ? 'bg-white' : 'bg-gray-50/50'}
+              >
                 <td className="border px-4 py-3 font-medium text-gray-900 sticky left-0 z-10 bg-inherit">
                   {org.organization}
                 </td>
@@ -225,7 +260,10 @@ export function ExpenseHeatmap({ className }: Props) {
                       }}
                       title={`${org.organization} - ${metric}: ${cell.displayValue}`}
                     >
-                      <div className="font-semibold" style={{ color: cell.color }}>
+                      <div
+                        className="font-semibold"
+                        style={{ color: cell.color }}
+                      >
                         {cell.displayValue}
                       </div>
                       <div className="text-xs text-gray-500 mt-1">
@@ -258,7 +296,9 @@ export function ExpenseHeatmap({ className }: Props) {
                 {formatPercent(analysis.avgExpenseRatio / 100)}
               </div>
               <div className="text-xs text-gray-500 mt-1">
-                {analysis.avgExpenseRatio <= 20 ? '✓ 整体控制良好' : '△ 需加强管控'}
+                {analysis.avgExpenseRatio <= 20
+                  ? '✓ 整体控制良好'
+                  : '△ 需加强管控'}
               </div>
             </div>
 
@@ -269,7 +309,8 @@ export function ExpenseHeatmap({ className }: Props) {
                 {analysis.minExpenseRatioOrg.organization}
               </div>
               <div className="text-sm text-green-700">
-                费用率 {formatPercent(analysis.minExpenseRatioOrg.expenseRatio / 100)}
+                费用率{' '}
+                {formatPercent(analysis.minExpenseRatioOrg.expenseRatio / 100)}
               </div>
             </div>
 
@@ -280,7 +321,8 @@ export function ExpenseHeatmap({ className }: Props) {
                 {analysis.maxExpenseRatioOrg.organization}
               </div>
               <div className="text-sm text-red-700">
-                费用率 {formatPercent(analysis.maxExpenseRatioOrg.expenseRatio / 100)}
+                费用率{' '}
+                {formatPercent(analysis.maxExpenseRatioOrg.expenseRatio / 100)}
               </div>
             </div>
           </div>
@@ -292,7 +334,12 @@ export function ExpenseHeatmap({ className }: Props) {
                 🚨 高费用率机构（超过25%）：
               </div>
               <div className="text-sm text-red-800">
-                {analysis.dangerOrgs.map(org => `${org.organization}(${formatPercent(org.expenseRatio / 100)})`).join('、')}
+                {analysis.dangerOrgs
+                  .map(
+                    org =>
+                      `${org.organization}(${formatPercent(org.expenseRatio / 100)})`
+                  )
+                  .join('、')}
               </div>
               <div className="text-xs text-red-700 mt-2">
                 建议：加强费用管控，优化费用结构，对标优秀机构
@@ -307,7 +354,12 @@ export function ExpenseHeatmap({ className }: Props) {
                 ✓ 费用管控优秀机构（低于15%）：
               </div>
               <div className="text-sm text-green-800">
-                {analysis.excellentOrgs.map(org => `${org.organization}(${formatPercent(org.expenseRatio / 100)})`).join('、')}
+                {analysis.excellentOrgs
+                  .map(
+                    org =>
+                      `${org.organization}(${formatPercent(org.expenseRatio / 100)})`
+                  )
+                  .join('、')}
               </div>
               <div className="text-xs text-green-700 mt-2">
                 可提炼最佳实践，在其他机构推广
@@ -319,19 +371,31 @@ export function ExpenseHeatmap({ className }: Props) {
           <div className="mt-4 flex items-center gap-6 text-sm">
             <div className="font-medium text-gray-700">颜色图例：</div>
             <div className="flex items-center gap-2">
-              <div className="w-4 h-4 rounded" style={{ backgroundColor: '#10b981' }}></div>
+              <div
+                className="w-4 h-4 rounded"
+                style={{ backgroundColor: '#10b981' }}
+              ></div>
               <span className="text-gray-600">优秀 (≤15%)</span>
             </div>
             <div className="flex items-center gap-2">
-              <div className="w-4 h-4 rounded" style={{ backgroundColor: '#3b82f6' }}></div>
+              <div
+                className="w-4 h-4 rounded"
+                style={{ backgroundColor: '#3b82f6' }}
+              ></div>
               <span className="text-gray-600">良好 (15-20%)</span>
             </div>
             <div className="flex items-center gap-2">
-              <div className="w-4 h-4 rounded" style={{ backgroundColor: '#f59e0b' }}></div>
+              <div
+                className="w-4 h-4 rounded"
+                style={{ backgroundColor: '#f59e0b' }}
+              ></div>
               <span className="text-gray-600">警告 (20-25%)</span>
             </div>
             <div className="flex items-center gap-2">
-              <div className="w-4 h-4 rounded" style={{ backgroundColor: '#ef4444' }}></div>
+              <div
+                className="w-4 h-4 rounded"
+                style={{ backgroundColor: '#ef4444' }}
+              ></div>
               <span className="text-gray-600">危险 (&gt;25%)</span>
             </div>
           </div>

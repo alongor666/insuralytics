@@ -12,16 +12,118 @@ import type {
   HierarchicalFilterState,
   KPIResult,
   PremiumTargets,
+  DimensionTargetMap,
+  TargetVersionSnapshot,
 } from '@/types/insurance'
+import { TARGET_DIMENSIONS } from '@/types/insurance'
 import { normalizeChineseText } from '@/lib/utils'
 
 const PREMIUM_TARGET_STORAGE_KEY = 'insurDashPremiumTargets'
+
+function createEmptyDimensionTargets(): DimensionTargetMap {
+  return TARGET_DIMENSIONS.reduce((acc, key) => {
+    acc[key] = {
+      entries: {},
+      updatedAt: null,
+      versions: [],
+    }
+    return acc
+  }, {} as DimensionTargetMap)
+}
 
 const defaultPremiumTargets: PremiumTargets = {
   year: new Date().getFullYear(),
   overall: 0,
   byBusinessType: {},
+  dimensions: createEmptyDimensionTargets(),
   updatedAt: null,
+}
+
+function normalizeTargetValue(value: unknown): number {
+  const numeric = Number(value)
+  if (!Number.isFinite(numeric) || numeric < 0) return 0
+  return Math.round(numeric)
+}
+
+function normalizeTargetEntries(
+  entries?: Record<string, number>
+): Record<string, number> {
+  if (!entries || typeof entries !== 'object') return {}
+  const normalized: Record<string, number> = {}
+  Object.entries(entries).forEach(([rawKey, rawValue]) => {
+    const key = normalizeChineseText(rawKey)
+    if (!key) return
+    normalized[key] = normalizeTargetValue(rawValue)
+  })
+  return normalized
+}
+
+function normalizeVersionSnapshots(
+  versions: TargetVersionSnapshot[] | undefined
+): TargetVersionSnapshot[] {
+  if (!Array.isArray(versions)) return []
+  const sanitized = versions
+    .map(version => {
+      if (!version) return null
+      const id =
+        version.id ||
+        `ver-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`
+      return {
+        id,
+        label: version.label || id,
+        createdAt: version.createdAt || new Date().toISOString(),
+        overall: normalizeTargetValue(version.overall),
+        entries: normalizeTargetEntries(version.entries),
+        note: version.note,
+      }
+    })
+    .filter((snapshot): snapshot is TargetVersionSnapshot => snapshot !== null)
+  return sanitized.sort(
+    (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+  )
+}
+
+function upgradePremiumTargets(raw?: Partial<PremiumTargets>): PremiumTargets {
+  if (!raw) {
+    return { ...defaultPremiumTargets, year: new Date().getFullYear() }
+  }
+
+  const year = raw.year || new Date().getFullYear()
+  const overall = normalizeTargetValue(raw.overall)
+  const baseUpdatedAt = raw.updatedAt ?? null
+
+  const normalizedDimensions: DimensionTargetMap = createEmptyDimensionTargets()
+
+  const legacyBusinessEntries = normalizeTargetEntries(raw.byBusinessType)
+  TARGET_DIMENSIONS.forEach(dimensionKey => {
+    const rawDimension = raw.dimensions?.[dimensionKey]
+    const entries = (() => {
+      if (dimensionKey === 'businessType') {
+        if (Object.keys(legacyBusinessEntries).length > 0) {
+          return legacyBusinessEntries
+        }
+      }
+      return normalizeTargetEntries(rawDimension?.entries)
+    })()
+
+    normalizedDimensions[dimensionKey] = {
+      entries,
+      updatedAt:
+        rawDimension?.updatedAt ??
+        (dimensionKey === 'businessType'
+          ? baseUpdatedAt
+          : (rawDimension?.updatedAt ?? null)),
+      versions: normalizeVersionSnapshots(rawDimension?.versions),
+    }
+  })
+
+  return {
+    year,
+    overall,
+    byBusinessType: normalizedDimensions.businessType.entries,
+    dimensions: normalizedDimensions,
+    updatedAt: baseUpdatedAt,
+  }
 }
 
 function loadPremiumTargetsFromStorage(): PremiumTargets {
@@ -34,13 +136,8 @@ function loadPremiumTargetsFromStorage(): PremiumTargets {
     if (!stored) {
       return defaultPremiumTargets
     }
-    const parsed = JSON.parse(stored) as PremiumTargets
-    return {
-      year: parsed.year || new Date().getFullYear(),
-      overall: Number.isFinite(parsed.overall) ? parsed.overall : 0,
-      byBusinessType: parsed.byBusinessType || {},
-      updatedAt: parsed.updatedAt ?? null,
-    }
+    const parsed = JSON.parse(stored) as Partial<PremiumTargets>
+    return upgradePremiumTargets(parsed)
   } catch (error) {
     console.warn('[useAppStore] 读取保费目标数据失败，已回退默认值', error)
     return defaultPremiumTargets
@@ -137,7 +234,7 @@ const defaultFilters: FilterState = {
  */
 export const useAppStore = create<AppState>()(
   devtools(
-    (set, get) => ({
+    set => ({
       // ============= 数据状态 =============
       rawData: [],
       isLoading: false,
@@ -153,7 +250,7 @@ export const useAppStore = create<AppState>()(
       // ============= 数据操作 =============
       setRawData: data =>
         set(
-          state => ({
+          () => ({
             // 进入 Store 前做一遍中文文本规范化，避免后续对比出现乱码
             rawData: data.map(r => ({
               ...r,
@@ -222,16 +319,24 @@ export const useAppStore = create<AppState>()(
               organizations: (
                 newFilters.organizations ?? state.filters.organizations
               ).map(normalizeChineseText),
-              insuranceTypes:
-                newFilters.insuranceTypes ?? state.filters.insuranceTypes,
+              insuranceTypes: (
+                newFilters.insuranceTypes ?? state.filters.insuranceTypes
+              ).map(normalizeChineseText),
               businessTypes: (
                 newFilters.businessTypes ?? state.filters.businessTypes
               ).map(normalizeChineseText),
-              coverageTypes:
-                newFilters.coverageTypes ?? state.filters.coverageTypes,
+              coverageTypes: (
+                newFilters.coverageTypes ?? state.filters.coverageTypes
+              ).map(normalizeChineseText),
               customerCategories: (
                 newFilters.customerCategories ??
                 state.filters.customerCategories
+              ).map(normalizeChineseText),
+              vehicleGrades: (
+                newFilters.vehicleGrades ?? state.filters.vehicleGrades
+              ).map(normalizeChineseText),
+              renewalStatuses: (
+                newFilters.renewalStatuses ?? state.filters.renewalStatuses
               ).map(normalizeChineseText),
               terminalSources: (
                 newFilters.terminalSources ?? state.filters.terminalSources
@@ -294,23 +399,45 @@ export const useAppStore = create<AppState>()(
       setPremiumTargets: targets =>
         set(
           () => {
-            const normalizedMap: Record<string, number> = {}
-            Object.entries(targets.byBusinessType).forEach(([key, value]) => {
-              const normalizedKey = normalizeChineseText(key)
-              normalizedMap[normalizedKey] = Math.max(
-                0,
-                Number.isFinite(value) ? value : 0
+            const timestamp = targets.updatedAt ?? new Date().toISOString()
+            const year = targets.year || new Date().getFullYear()
+            const overall = normalizeTargetValue(targets.overall)
+
+            const normalizedDimensions: DimensionTargetMap =
+              createEmptyDimensionTargets()
+            TARGET_DIMENSIONS.forEach(dimensionKey => {
+              const incomingDimension = targets.dimensions?.[dimensionKey]
+              const fallbackEntries =
+                dimensionKey === 'businessType'
+                  ? targets.byBusinessType
+                  : undefined
+
+              const entries = normalizeTargetEntries(
+                incomingDimension?.entries ?? fallbackEntries
               )
+
+              const hasMeaningfulPayload =
+                incomingDimension?.entries !== undefined ||
+                (dimensionKey === 'businessType' &&
+                  Object.keys(entries).length > 0)
+
+              normalizedDimensions[dimensionKey] = {
+                entries,
+                updatedAt:
+                  incomingDimension?.updatedAt ??
+                  (hasMeaningfulPayload ? timestamp : null),
+                versions: normalizeVersionSnapshots(
+                  incomingDimension?.versions
+                ),
+              }
             })
 
             const nextTargets: PremiumTargets = {
-              year: targets.year || new Date().getFullYear(),
-              overall: Math.max(
-                0,
-                Number.isFinite(targets.overall) ? targets.overall : 0
-              ),
-              byBusinessType: normalizedMap,
-              updatedAt: targets.updatedAt ?? new Date().toISOString(),
+              year,
+              overall,
+              byBusinessType: normalizedDimensions.businessType.entries,
+              dimensions: normalizedDimensions,
+              updatedAt: timestamp,
             }
 
             if (typeof window !== 'undefined') {

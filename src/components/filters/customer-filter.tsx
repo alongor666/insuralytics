@@ -6,6 +6,7 @@ import { useAppStore } from '@/store/use-app-store'
 import { filterRecordsWithExclusions } from '@/store/use-app-store'
 import type { VehicleInsuranceGrade } from '@/types/insurance'
 import { normalizeChineseText } from '@/lib/utils'
+import { CANONICAL_RENEWAL_STATUSES } from '@/constants/dimensions'
 
 export function CustomerFilter() {
   const filters = useAppStore(state => state.filters)
@@ -56,15 +57,19 @@ export function CustomerFilter() {
     filters,
     ['renewalStatuses']
   )
-  const availableRenewalStatuses = Array.from(
-    new Set(recordsForRenewalStatuses.map(record => record.renewal_status))
-  )
-    .filter(status => status)
-    .sort()
-    .map(status => ({ label: status, value: status }))
+  const availableRenewalStatuses = (() => {
+    const present = new Set<string>(
+      recordsForRenewalStatuses
+        .map(record => String(record.renewal_status))
+        .filter((v): v is string => Boolean(v))
+    )
+    return CANONICAL_RENEWAL_STATUSES.filter(status => present.has(status))
+      .sort((a, b) => a.localeCompare(b, 'zh-CN'))
+      .map(status => ({ label: status, value: status }))
+  })()
 
   const handleCustomerCategoryChange = (categories: string[]) => {
-    updateFilters({ customerCategories: categories.map(normalizeChineseText) })
+    updateFilters({ customerCategories: categories })
   }
 
   const handleVehicleGradeChange = (grades: string[]) => {
@@ -89,51 +94,53 @@ export function CustomerFilter() {
     filters.renewalStatuses.length > 0
 
   return (
-    <FilterContainer
-      title="客户维度"
-      onReset={hasFilters ? handleReset : undefined}
-    >
-      <div className="space-y-3">
-        <div>
-          <label className="mb-1.5 block text-xs text-slate-600">
-            客户分类
-          </label>
-          <MultiSelectFilter
-            options={availableCustomerCategories}
-            selectedValues={filters.customerCategories}
-            onChange={handleCustomerCategoryChange}
-            placeholder="选择客户分类"
-            searchPlaceholder="搜索客户分类..."
-            emptyText="未找到客户分类"
-          />
+    <div className="rounded-2xl border-2 border-slate-200 bg-white p-5">
+      <FilterContainer
+        title="客户维度"
+        onReset={hasFilters ? handleReset : undefined}
+      >
+        <div className="space-y-4">
+          <div>
+            <label className="mb-2 block text-sm font-medium text-slate-700">
+              客户分类
+            </label>
+            <MultiSelectFilter
+              options={availableCustomerCategories}
+              selectedValues={filters.customerCategories}
+              onChange={handleCustomerCategoryChange}
+              placeholder="选择客户分类"
+              searchPlaceholder="搜索客户分类..."
+              emptyText="未找到客户分类"
+            />
+          </div>
+          <div>
+            <label className="mb-2 block text-sm font-medium text-slate-700">
+              车险评级
+            </label>
+            <MultiSelectFilter
+              options={availableVehicleGrades}
+              selectedValues={filters.vehicleGrades}
+              onChange={handleVehicleGradeChange}
+              placeholder="选择车险评级"
+              searchPlaceholder="搜索车险评级..."
+              emptyText="未找到车险评级"
+            />
+          </div>
+          <div>
+            <label className="mb-2 block text-sm font-medium text-slate-700">
+              新续转状态
+            </label>
+            <MultiSelectFilter
+              options={availableRenewalStatuses}
+              selectedValues={filters.renewalStatuses}
+              onChange={handleRenewalStatusChange}
+              placeholder="选择新续转状态"
+              searchPlaceholder="搜索状态..."
+              emptyText="未找到状态"
+            />
+          </div>
         </div>
-        <div>
-          <label className="mb-1.5 block text-xs text-slate-600">
-            车险评级
-          </label>
-          <MultiSelectFilter
-            options={availableVehicleGrades}
-            selectedValues={filters.vehicleGrades}
-            onChange={handleVehicleGradeChange}
-            placeholder="选择车险评级"
-            searchPlaceholder="搜索车险评级..."
-            emptyText="未找到车险评级"
-          />
-        </div>
-        <div>
-          <label className="mb-1.5 block text-xs text-slate-600">
-            新续转状态
-          </label>
-          <MultiSelectFilter
-            options={availableRenewalStatuses}
-            selectedValues={filters.renewalStatuses}
-            onChange={handleRenewalStatusChange}
-            placeholder="选择新续转状态"
-            searchPlaceholder="搜索状态..."
-            emptyText="未找到状态"
-          />
-        </div>
-      </div>
-    </FilterContainer>
+      </FilterContainer>
+    </div>
   )
 }

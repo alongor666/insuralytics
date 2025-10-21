@@ -4,6 +4,10 @@
  */
 
 import type { InsuranceRecord, KPIResult } from '@/types/insurance'
+import {
+  getTimeProgressForWeek,
+  WORKING_WEEKS_PER_YEAR,
+} from '@/lib/utils/date-utils'
 
 /**
  * 基础聚合数据
@@ -23,6 +27,20 @@ interface BaseAggregation {
 interface KPIComputationOptions {
   premiumTargetYuan?: number | null
   policyCountTarget?: number | null
+  /**
+   * 计算模式：
+   * - 'current': 当周值模式（累计值）
+   * - 'increment': 周增量模式（增量值）
+   */
+  mode?: 'current' | 'increment'
+  /**
+   * 当前周次（用于计算时间进度）
+   */
+  currentWeekNumber?: number | null
+  /**
+   * 年份（用于计算时间进度）
+   */
+  year?: number | null
 }
 
 /**
@@ -169,11 +187,23 @@ function computeKPIs(
   )
 
   // 计算年度时间进度
-  const currentDayOfYear = Math.floor(
-    (Date.now() - new Date(new Date().getFullYear(), 0, 0).getTime()) /
-      (1000 * 60 * 60 * 24)
-  )
-  const yearProgress = currentDayOfYear / 365
+  // 根据模式和周次计算时间进度
+  let yearProgress = 0
+  if (options.mode === 'current' && options.currentWeekNumber && options.year) {
+    // 当周值模式：使用周次对应的时间进度
+    yearProgress = getTimeProgressForWeek(
+      options.year,
+      options.currentWeekNumber
+    )
+  } else {
+    // 默认：使用当前日期
+    const currentDayOfYear = Math.floor(
+      (Date.now() - new Date(new Date().getFullYear(), 0, 0).getTime()) /
+        (1000 * 60 * 60 * 24)
+    )
+    yearProgress = currentDayOfYear / 365
+  }
+
   const completionRatio = safeDivide(
     aggregated.signed_premium_yuan,
     premiumPlanYuan
@@ -224,10 +254,30 @@ function computeKPIs(
       : null
 
   // ============= 时间进度达成率 =============
-  const premium_time_progress_achievement_rate =
-    completionRatio !== null && yearProgress > 0
-      ? (completionRatio / yearProgress) * 100
-      : null
+  // 保费时间进度达成率的计算逻辑：
+  // - 当周值模式：(实际保费 / 年度目标) / (已过天数 / 365) × 100%
+  // - 周增量模式：周增量 / 周计划 × 100%，其中周计划 = 年度目标 / 50
+  let premium_time_progress_achievement_rate: number | null = null
+
+  if (options.mode === 'increment') {
+    // 周增量模式
+    if (premiumPlanYuan > 0) {
+      const weekPlan = premiumPlanYuan / WORKING_WEEKS_PER_YEAR // 50周
+      premium_time_progress_achievement_rate = safeDivide(
+        aggregated.signed_premium_yuan,
+        weekPlan
+      )
+      if (premium_time_progress_achievement_rate !== null) {
+        premium_time_progress_achievement_rate *= 100
+      }
+    }
+  } else {
+    // 当周值模式（默认）
+    if (completionRatio !== null && yearProgress > 0) {
+      premium_time_progress_achievement_rate =
+        (completionRatio / yearProgress) * 100
+    }
+  }
 
   // 计算件数时间进度达成率（假设有年度件数目标）
   const policyCompletionRatio =
@@ -305,16 +355,28 @@ export class KPIEngine {
    */
   calculate(
     records: InsuranceRecord[],
-    options: { annualTargetYuan?: number | null; useCache?: boolean } = {}
+    options: {
+      annualTargetYuan?: number | null
+      useCache?: boolean
+      mode?: 'current' | 'increment'
+      currentWeekNumber?: number | null
+      year?: number | null
+    } = {}
   ): KPIResult {
-    const { annualTargetYuan = null, useCache = true } = options
+    const {
+      annualTargetYuan = null,
+      useCache = true,
+      mode = 'current',
+      currentWeekNumber = null,
+      year = null,
+    } = options
 
     if (records.length === 0) {
       return this.getEmptyKPIResult()
     }
 
     // 检查缓存
-    const cacheKey = this.generateCacheKey(records, 'current', annualTargetYuan)
+    const cacheKey = this.generateCacheKey(records, mode, annualTargetYuan)
     if (useCache && this.cache.has(cacheKey)) {
       return this.cache.get(cacheKey)!
     }
@@ -325,6 +387,9 @@ export class KPIEngine {
     // 计算 KPI
     const result = computeKPIs(aggregated, {
       premiumTargetYuan: annualTargetYuan ?? null,
+      mode,
+      currentWeekNumber,
+      year,
     })
 
     // 缓存结果
@@ -339,14 +404,27 @@ export class KPIEngine {
    * 计算周增量 KPI
    * @param currentWeekRecords 当前周的记录
    * @param previousWeekRecords 前一周的记录
-   * @param useCache 是否使用缓存（默认 true）
+   * @param options 计算选项
    * @returns 周增量 KPI 结果
    */
   calculateIncrement(
     currentWeekRecords: InsuranceRecord[],
     previousWeekRecords: InsuranceRecord[],
-    useCache = true
+    options: {
+      useCache?: boolean
+      mode?: 'current' | 'increment'
+      annualTargetYuan?: number | null
+      currentWeekNumber?: number | null
+      year?: number | null
+    } = {}
   ): KPIResult {
+    const {
+      useCache = true,
+      mode = 'increment',
+      annualTargetYuan = null,
+      currentWeekNumber = null,
+      year = null,
+    } = options
     // 如果当前周没有数据，返回空结果
     if (currentWeekRecords.length === 0) {
       return this.getEmptyKPIResult()
@@ -389,8 +467,13 @@ export class KPIEngine {
         previousAgg.marginal_contribution_amount_yuan,
     }
 
-    // 计算增量 KPI
-    const result = computeKPIs(incrementAgg)
+    // 计算增量 KPI（传入mode和其他选项）
+    const result = computeKPIs(incrementAgg, {
+      premiumTargetYuan: annualTargetYuan,
+      mode,
+      currentWeekNumber,
+      year,
+    })
 
     // 缓存结果
     if (useCache) {

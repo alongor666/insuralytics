@@ -24,40 +24,92 @@ export function useKPI(): KPIResult | null {
   const currentTargetYuan = useMemo(() => {
     if (!premiumTargets) return null
 
+    // 优先级：业务类型 > 三级机构 > 客户分类 > 保险类型 > 总体目标
+
+    // 1. 业务类型目标
     if (filters.businessTypes.length > 0) {
       const sum = filters.businessTypes.reduce((acc, type) => {
         const normalized = normalizeChineseText(type)
-        return acc + (premiumTargets.byBusinessType[normalized] ?? 0)
+        return (
+          acc +
+          (premiumTargets.dimensions.businessType.entries[normalized] ?? 0)
+        )
       }, 0)
-      if (sum > 0) {
-        return sum
-      }
+      if (sum > 0) return sum
     }
 
+    // 2. 三级机构目标
+    if (filters.organizations.length > 0) {
+      const sum = filters.organizations.reduce((acc, org) => {
+        const normalized = normalizeChineseText(org)
+        return (
+          acc +
+          (premiumTargets.dimensions.thirdLevelOrganization.entries[
+            normalized
+          ] ?? 0)
+        )
+      }, 0)
+      if (sum > 0) return sum
+    }
+
+    // 3. 客户分类目标
+    if (filters.customerCategories.length > 0) {
+      const sum = filters.customerCategories.reduce((acc, category) => {
+        const normalized = normalizeChineseText(category)
+        return (
+          acc +
+          (premiumTargets.dimensions.customerCategory.entries[normalized] ?? 0)
+        )
+      }, 0)
+      if (sum > 0) return sum
+    }
+
+    // 4. 保险类型目标
+    if (filters.insuranceTypes.length > 0) {
+      const sum = filters.insuranceTypes.reduce((acc, type) => {
+        const normalized = normalizeChineseText(type)
+        return (
+          acc +
+          (premiumTargets.dimensions.insuranceType.entries[normalized] ?? 0)
+        )
+      }, 0)
+      if (sum > 0) return sum
+    }
+
+    // 5. 总体目标
     return premiumTargets.overall > 0 ? premiumTargets.overall : null
-  }, [filters.businessTypes, premiumTargets])
+  }, [filters, premiumTargets])
 
   const kpiResult = useMemo(() => {
     if (filteredData.length === 0) {
       return null
     }
 
+    // 获取当前选择的周次和年份
+    const currentWeek =
+      filters.viewMode === 'single' ? filters.singleModeWeek : null
+    const currentYear =
+      filters.years.length > 0
+        ? Math.max(...filters.years)
+        : new Date().getFullYear()
+
     // 当周值模式：直接计算
     if (dataViewType === 'current') {
       return kpiEngine.calculate(filteredData, {
         annualTargetYuan: currentTargetYuan ?? undefined,
+        mode: 'current',
+        currentWeekNumber: currentWeek ?? undefined,
+        year: currentYear,
       })
     }
 
     // 周增量模式：需要计算当前周和前一周的差值
-    // 获取当前选择的周次
-    const currentWeek =
-      filters.viewMode === 'single' ? filters.singleModeWeek : null
-
     if (!currentWeek) {
       // 如果没有选择具体周次，返回当周值
       return kpiEngine.calculate(filteredData, {
         annualTargetYuan: currentTargetYuan ?? undefined,
+        mode: 'current',
+        year: currentYear,
       })
     }
 
@@ -140,9 +192,14 @@ export function useKPI(): KPIResult | null {
       return true
     })
 
-    // 计算周增量
-    return kpiEngine.calculateIncrement(currentWeekData, previousWeekData)
-  }, [filteredData, rawData, filters, dataViewType])
+    // 计算周增量（使用increment模式）
+    return kpiEngine.calculateIncrement(currentWeekData, previousWeekData, {
+      mode: 'increment',
+      annualTargetYuan: currentTargetYuan ?? undefined,
+      currentWeekNumber: currentWeek,
+      year: currentYear,
+    })
+  }, [filteredData, rawData, filters, dataViewType, currentTargetYuan])
 
   return kpiResult
 }

@@ -260,7 +260,7 @@ export function FilterInteractionManager() {
     if (filters.dataViewType === 'increment' && filters.weeks.length < 2) {
       console.log('提示：周增量分析建议选择多个周期以获得更好的分析效果')
     }
-  }, [filters.dataViewType])
+  }, [filters.dataViewType, filters.weeks.length])
 
   /**
    * 组织筛选的级联响应

@@ -4,9 +4,9 @@ import { LineChart, Line, ResponsiveContainer } from 'recharts'
 
 export interface SparklineProps {
   /**
-   * 数据点数组
+   * 数据点数组（null值表示数据缺失，将显示为断点）
    */
-  data: number[]
+  data: (number | null)[]
 
   /**
    * 线条颜色
@@ -47,6 +47,11 @@ export interface SparklineProps {
    * 填充透明度
    */
   fillOpacity?: number
+
+  /**
+   * 是否连接null值（false时null值会造成线条断裂）
+   */
+  connectNulls?: boolean
 }
 
 /**
@@ -63,6 +68,7 @@ export function Sparkline({
   filled = false,
   fillColor,
   fillOpacity = 0.2,
+  connectNulls = false,
 }: SparklineProps) {
   // 将数据转换为Recharts需要的格式
   const chartData = data.map((value, index) => ({
@@ -89,6 +95,7 @@ export function Sparkline({
           fill={filled ? fillColor || color : 'none'}
           fillOpacity={fillOpacity}
           isAnimationActive={false}
+          connectNulls={connectNulls}
         />
       </LineChart>
     </ResponsiveContainer>

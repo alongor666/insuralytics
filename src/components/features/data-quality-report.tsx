@@ -3,8 +3,6 @@
 import React, { useMemo } from 'react'
 import {
   BarChart3,
-  PieChart,
-  TrendingUp,
   AlertTriangle,
   CheckCircle,
   XCircle,
@@ -57,8 +55,6 @@ export function DataQualityReport({
   const qualityMetrics = useMemo((): QualityMetric[] => {
     const completenessRate =
       totalRecords > 0 ? (validRecords / totalRecords) * 100 : 0
-    const errorRate =
-      totalRecords > 0 ? (invalidRecords / totalRecords) * 100 : 0
     const criticalErrorRate =
       totalRecords > 0
         ? (errorStats.severityStats.error / totalRecords) * 100
@@ -120,7 +116,7 @@ export function DataQualityReport({
         description: '数据格式和规范的一致性',
       },
     ]
-  }, [totalRecords, validRecords, invalidRecords, errorStats])
+  }, [totalRecords, validRecords, errorStats])
 
   /**
    * 计算总体质量评分

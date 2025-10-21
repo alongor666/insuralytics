@@ -7,7 +7,6 @@
 
 import {
   TrendingDown,
-  TrendingUp,
   DollarSign,
   Target,
   Calendar,
@@ -19,7 +18,6 @@ import { KPICard, KPICardSkeleton } from './kpi-card'
 import {
   formatPercent,
   formatCurrency,
-  formatDecimal,
   getContributionMarginColor,
   getContributionMarginBgColor,
 } from '@/utils/format'

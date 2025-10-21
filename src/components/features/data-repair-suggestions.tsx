@@ -5,10 +5,8 @@ import {
   Wrench,
   Lightbulb,
   CheckCircle,
-  AlertTriangle,
   ArrowRight,
   Copy,
-  ExternalLink,
   BookOpen,
   Target,
   Zap,
@@ -316,7 +314,7 @@ export function DataRepairSuggestions({
       </div>
 
       <div className="p-6 space-y-6">
-        {repairSuggestions.map((suggestion, index) => (
+        {repairSuggestions.map(suggestion => (
           <div
             key={suggestion.id}
             className="border border-slate-200 rounded-lg overflow-hidden"

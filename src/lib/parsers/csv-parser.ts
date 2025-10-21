@@ -589,7 +589,7 @@ export async function parseCSVFile(
     }
 
     console.log(`[CSV Parser] 开始 Papa Parse 解析 - 优化大文件处理`)
-    Papa.parse(sourceFile, {
+    Papa.parse<Record<string, string>>(sourceFile, {
       header: true,
       dynamicTyping: false,
       skipEmptyLines: true,
@@ -605,15 +605,11 @@ export async function parseCSVFile(
           // 检查表头字段（仅检查一次）
           if (!headersChecked) {
             headersChecked = true
-            const fields =
-              results.meta && Array.isArray((results.meta as any).fields)
-                ? ((results.meta as any).fields as string[])
-                : undefined
+            const fields = results.meta?.fields
 
-            let present: string[] | undefined = fields
+            let present: string[] | undefined = fields ?? undefined
             if (!present || present.length === 0) {
-              const firstRow =
-                (results.data && (results.data as any[])[0]) || {}
+              const firstRow = results.data?.[0] || {}
               present = Object.keys(firstRow || {})
             }
 
@@ -666,7 +662,7 @@ export async function parseCSVFile(
             return
           }
 
-          const batchData = results.data as Record<string, unknown>[]
+          const batchData = results.data
           console.log(`[CSV Parser] 开始处理 ${batchData.length} 行数据`)
 
           // 优化大数据量处理：批量处理数据行
@@ -674,7 +670,7 @@ export async function parseCSVFile(
           for (let i = 0; i < batchData.length; i += BATCH_SIZE) {
             const batch = batchData.slice(i, i + BATCH_SIZE)
 
-            batch.forEach((row, batchIndex) => {
+            batch.forEach(row => {
               if (
                 row &&
                 typeof row === 'object' &&
@@ -717,9 +713,8 @@ export async function parseCSVFile(
             }
           }
 
-          if ((results.meta as any) && (results.meta as any).cursor) {
-            const progress =
-              (((results.meta as any).cursor as number) / sourceFile.size) * 80
+          if (typeof results.meta?.cursor === 'number') {
+            const progress = (results.meta.cursor / sourceFile.size) * 80
             updateProgress('parsing', progress)
           }
 

@@ -3,27 +3,29 @@
  * 用于将过滤后的数据导出为 CSV 文件
  */
 
-import { InsuranceRecord } from '@/types/insurance'
+import type { InsuranceRecord } from '@/types/insurance'
 import Papa from 'papaparse'
 
 /**
  * 导出选项
  */
+type ExportField = keyof InsuranceRecord
+
 export interface ExportOptions {
   /** 文件名（不含扩展名） */
   filename?: string
   /** 是否包含表头 */
   includeHeader?: boolean
   /** 自定义字段顺序（字段名数组） */
-  fieldOrder?: string[]
+  fieldOrder?: ExportField[]
   /** 需要导出的字段（不传则导出全部） */
-  fields?: string[]
+  fields?: ExportField[]
 }
 
 /**
  * 默认字段顺序（按照业务逻辑分组）
  */
-const DEFAULT_FIELD_ORDER = [
+const DEFAULT_FIELD_ORDER: ExportField[] = [
   // 时间维度
   'snapshot_date',
   'policy_start_year',
@@ -68,38 +70,6 @@ const DEFAULT_FIELD_ORDER = [
 ]
 
 /**
- * 字段中文名映射
- */
-const FIELD_LABELS: Record<string, string> = {
-  snapshot_date: '快照日期',
-  policy_start_year: '保单年度',
-  week_number: '周序号',
-  chengdu_branch: '地域',
-  third_level_organization: '三级机构',
-  customer_category_3: '客户类别',
-  insurance_type: '保险类型',
-  business_type_category: '业务类型',
-  coverage_type: '险别组合',
-  renewal_status: '新续转状态',
-  is_new_energy_vehicle: '是否新能源',
-  is_transferred_vehicle: '是否过户车',
-  vehicle_insurance_grade: '车险评级',
-  highway_risk_grade: '高速风险等级',
-  large_truck_score: '大货车评分',
-  small_truck_score: '小货车评分',
-  terminal_source: '终端来源',
-  signed_premium_yuan: '签单保费(元)',
-  matured_premium_yuan: '满期保费(元)',
-  policy_count: '保单件数',
-  claim_case_count: '赔案件数',
-  reported_claim_payment_yuan: '已报告赔款(元)',
-  expense_amount_yuan: '费用金额(元)',
-  commercial_premium_before_discount_yuan: '商业险折前保费(元)',
-  premium_plan_yuan: '保费计划(元)',
-  marginal_contribution_amount_yuan: '边际贡献额(元)',
-}
-
-/**
  * 将数据导出为 CSV
  */
 export function exportToCSV(
@@ -114,7 +84,7 @@ export function exportToCSV(
   } = options
 
   // 确定要导出的字段
-  const exportFields = fields || fieldOrder
+  const exportFields = fields ?? fieldOrder
 
   // 如果没有数据，提示用户
   if (data.length === 0) {
@@ -124,9 +94,9 @@ export function exportToCSV(
 
   // 转换数据格式
   const exportData = data.map(record => {
-    const row: Record<string, any> = {}
+    const row: Record<string, string | number> = {}
     exportFields.forEach(field => {
-      const value = (record as any)[field]
+      const value = record[field]
       // 处理布尔值
       if (typeof value === 'boolean') {
         row[field] = value ? 'True' : 'False'
@@ -137,7 +107,10 @@ export function exportToCSV(
       }
       // 其他值直接使用
       else {
-        row[field] = value
+        row[field] =
+          typeof value === 'number' || typeof value === 'string'
+            ? value
+            : String(value)
       }
     })
     return row
@@ -156,9 +129,29 @@ export function exportToCSV(
 /**
  * 导出 KPI 汇总数据
  */
+interface KPISummarySnapshot {
+  maturedMarginRate?: number | null
+  premiumAchievementRate?: number | null
+  maturedClaimRate?: number | null
+  expenseRate?: number | null
+  maturityRate?: number | null
+  maturedClaimFrequency?: number | null
+  variableCostRate?: number | null
+  autonomyCoefficient?: number | null
+  signedPremium?: number | null
+  maturedPremium?: number | null
+}
+
+interface KPIFilterState {
+  policyYear?: number[]
+  weekNumber?: number[]
+  thirdLevelOrganization?: string[]
+  insuranceType?: string[]
+}
+
 export function exportKPISummary(
-  kpiData: any,
-  filterState: any,
+  kpiData: KPISummarySnapshot,
+  filterState: KPIFilterState,
   options: ExportOptions = {}
 ): void {
   const filename =
@@ -291,9 +284,15 @@ function downloadCSV(csvContent: string, filename: string): void {
 /**
  * 导出过滤后的明细数据
  */
+interface ExportFilterState {
+  policyYear?: number[]
+  weekNumber?: number[]
+  thirdLevelOrganization?: string[]
+}
+
 export function exportFilteredData(
   data: InsuranceRecord[],
-  filterState: any,
+  filterState: ExportFilterState,
   options: ExportOptions = {}
 ): void {
   const filters = []

@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useState, useMemo } from 'react'
+import React, { useState } from 'react'
 import {
   ResponsiveContainer,
   PieChart,
@@ -14,6 +14,7 @@ import {
   useChannelDistribution,
 } from '@/hooks/use-aggregation'
 import { formatNumber } from '@/utils/format'
+import type { PiePoint } from '@/hooks/use-aggregation'
 
 const COLORS = [
   '#1d4ed8',
@@ -34,7 +35,7 @@ export const DistributionPieChart = React.memo(function DistributionPieChart() {
   const [mode, setMode] = useState<'customer' | 'channel'>('customer')
   const customer = useCustomerDistribution()
   const channel = useChannelDistribution()
-  const data = mode === 'customer' ? customer : channel
+  const data: PiePoint[] = mode === 'customer' ? customer : channel
 
   if (!data || data.length === 0) return null
 
@@ -66,7 +67,7 @@ export const DistributionPieChart = React.memo(function DistributionPieChart() {
         <ResponsiveContainer width="100%" height="100%">
           <PieChart>
             <Pie
-              data={data as any}
+              data={data}
               dataKey="value"
               nameKey="label"
               cx="50%"
@@ -82,8 +83,8 @@ export const DistributionPieChart = React.memo(function DistributionPieChart() {
               ))}
             </Pie>
             <Tooltip
-              formatter={(v: any, name: string) => [
-                `${formatNumber(v as number, 2)} 万`,
+              formatter={(value: number, name: string) => [
+                `${formatNumber(value, 2)} 万`,
                 name,
               ]}
             />

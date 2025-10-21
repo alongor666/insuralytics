@@ -90,8 +90,9 @@ export interface KPICardProps {
 
   /**
    * 趋势数据（用于显示sparkline）
+   * null值表示该数据点缺失，将在图表中显示为断点
    */
-  trendData?: number[]
+  trendData?: (number | null)[]
 
   /**
    * 是否显示趋势图
