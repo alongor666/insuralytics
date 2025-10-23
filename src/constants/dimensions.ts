@@ -49,3 +49,20 @@ export const CANONICAL_TERMINAL_SOURCES: string[] = [
   '0202APP',
   '0301电销',
 ]
+
+// 新增：三级机构 Canonical 集合（13项）
+export const CANONICAL_THIRD_LEVEL_ORGANIZATIONS: string[] = [
+  '本部',
+  '达州',
+  '德阳',
+  '高新',
+  '乐山',
+  '泸州',
+  '青羊',
+  '天府',
+  '武侯',
+  '新都',
+  '宜宾',
+  '资阳',
+  '自贡',
+]

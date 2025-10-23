@@ -25,7 +25,9 @@ import {
 } from '@/components/filters/filter-interaction-manager'
 import { TopToolbar } from '@/components/layout/top-toolbar'
 import { Toaster } from '@/components/ui/toaster'
-import { useAppStore } from '@/store/use-app-store'
+import { useInsuranceData } from '@/hooks/domains/useInsuranceData'
+import { useFiltering } from '@/hooks/domains/useFiltering'
+import { useKPICalculation } from '@/hooks/domains/useKPICalculation'
 import { useKPI } from '@/hooks/use-kpi'
 import { usePersistData } from '@/hooks/use-persist-data'
 import { useSmartComparison } from '@/hooks/use-smart-comparison'
@@ -40,20 +42,23 @@ import {
   DialogFooter,
 } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import {
   AnalysisTabs,
   type AnalysisTabValue,
 } from '@/components/layout/analysis-tabs'
 import { ForecastPanel } from '@/components/features/forecast-panel'
 import { PredictionManagerPanel } from '@/components/features/prediction-manager'
+import { DataManagementPanel } from '@/components/features/data-management-panel'
+import { FilterManagementPanel } from '@/components/features/filter-management-panel'
 
 export default function HomePage() {
-  const rawData = useAppStore(state => state.rawData)
-  const setViewMode = useAppStore(state => state.setViewMode)
+  // 使用新架构的 Hooks
+  const { rawData } = useInsuranceData()
+  const { setViewMode, resetFilters } = useFiltering()
   const kpiData = useKPI()
-  const premiumTargetsOverall = useAppStore(
-    state => state.premiumTargets?.overall
-  )
+  const { premiumTargets } = useKPICalculation()
+  const premiumTargetsOverall = premiumTargets?.overall
 
   // 使用智能环比数据（优化参数以避免无限重渲染）
   const smartComparisonOptions = useMemo(
@@ -65,13 +70,13 @@ export default function HomePage() {
   const { currentKpi, compareKpi, previousWeekNumber } =
     useSmartComparison(smartComparisonOptions)
 
-  const [showFilters, setShowFilters] = useState(false)
   const [mounted, setMounted] = useState(false)
   const router = useRouter()
   const searchParams = useSearchParams()
   const initialTabParam =
     (searchParams?.get('tab') as AnalysisTabValue | null) ?? 'kpi'
   const validTabs: AnalysisTabValue[] = [
+    'data-management',
     'kpi',
     'trend',
     'thematic',
@@ -86,7 +91,6 @@ export default function HomePage() {
   const [activeTab, setActiveTab] = useState<AnalysisTabValue>(
     initialTab === 'targets' ? 'kpi' : initialTab
   )
-  const resetFilters = useAppStore(state => state.resetFilters)
 
   // 使用数据持久化
   usePersistData()
@@ -172,15 +176,20 @@ export default function HomePage() {
           )}
 
           {/* 顶部工具栏和时间进度 - 放置在统一导航之下 */}
-          {hasData && (
+          {hasData && activeTab !== 'data-management' && (
             <div className="mb-4 flex items-start gap-4">
               <div className="flex-1">
-                <TopToolbar
-                  showFilters={showFilters}
-                  onToggleFilters={() => setShowFilters(!showFilters)}
-                  rawCount={rawData.length}
-                />
+                <TopToolbar rawCount={rawData.length} />
               </div>
+              <div className="w-80">
+                <TimeProgressIndicator />
+              </div>
+            </div>
+          )}
+
+          {/* 数据管理页面的时间进度 - 单独显示 */}
+          {hasData && activeTab === 'data-management' && (
+            <div className="mb-4 flex justify-end">
               <div className="w-80">
                 <TimeProgressIndicator />
               </div>
@@ -207,6 +216,13 @@ export default function HomePage() {
 
         {hasData && (
           <div className="space-y-8">
+            {/* 数据管理页面 */}
+            {activeTab === 'data-management' && (
+              <div className="space-y-6">
+                <DataManagementPanel />
+              </div>
+            )}
+
             {/* KPI 看板 - 使用完整版 */}
             {activeTab === 'kpi' && (
               <FullKPIDashboard
@@ -259,29 +275,6 @@ export default function HomePage() {
           </div>
         )}
       </main>
-
-      {/* 浮层筛选面板：使用对话框，带遮罩与居中大尺寸布局 */}
-      {hasData && (
-        <Dialog open={showFilters} onOpenChange={setShowFilters}>
-          <DialogContent className="max-w-6xl w-[92vw] h-[80vh] sm:rounded-2xl bg-white/95">
-            <DialogHeader>
-              <DialogTitle>业务维度筛选</DialogTitle>
-              <DialogDescription>集中筛选，不打扰主页面浏览</DialogDescription>
-            </DialogHeader>
-            <div className="overflow-auto h-[calc(80vh-8rem)]">
-              <FilterPanel />
-            </div>
-            <DialogFooter>
-              <div className="flex items-center justify-end gap-3 w-full">
-                <Button variant="outline" onClick={resetFilters}>
-                  重置筛选
-                </Button>
-                <Button onClick={() => setShowFilters(false)}>关闭</Button>
-              </div>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
-      )}
 
       <Toaster />
     </div>

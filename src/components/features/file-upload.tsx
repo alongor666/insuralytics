@@ -5,13 +5,14 @@
 
 'use client'
 
-import React, { useState, useCallback } from 'react'
-import { Upload, FileText, X, RefreshCw } from 'lucide-react'
+import React, { useState, useCallback, useMemo } from 'react'
+import { Upload, FileText, X, RefreshCw, Database, Trash2, AlertTriangle } from 'lucide-react'
 import { useFileUpload } from '@/hooks/use-file-upload'
 import { Progress } from '@/components/ui/progress'
 import { useToast } from '@/hooks/use-toast'
 import { cn } from '@/lib/utils'
 import { UploadResultsDetail } from './upload-results-detail'
+import { useAppStore } from '@/store/use-app-store'
 
 /**
  * 格式化文件大小
@@ -37,6 +38,7 @@ export function FileUpload() {
   const [isDragging, setIsDragging] = useState(false)
   const [selectedFiles, setSelectedFiles] = useState<File[]>([])
   const [parallelMode, setParallelMode] = useState(true) // 默认启用并行模式
+  const [showClearConfirm, setShowClearConfirm] = useState(false)
 
   const {
     progress,
@@ -50,6 +52,27 @@ export function FileUpload() {
   } = useFileUpload()
 
   const { toast } = useToast()
+
+  // 获取store中的数据和方法
+  const rawData = useAppStore(state => state.rawData)
+  const clearData = useAppStore(state => state.clearData)
+  const clearPersistentData = useAppStore(state => state.clearPersistentData)
+  const getStorageStats = useAppStore(state => state.getStorageStats)
+  
+  // 获取已有数据统计
+  const existingDataStats = useMemo(() => {
+    if (rawData.length === 0) return null
+
+    const weeks = Array.from(new Set(rawData.map(r => r.week_number))).sort((a, b) => a - b)
+    const years = Array.from(new Set(rawData.map(r => r.policy_start_year))).sort((a, b) => a - b)
+
+    return {
+      totalRecords: rawData.length,
+      weeks,
+      years,
+      weekRange: weeks.length > 0 ? `${Math.min(...weeks)}-${Math.max(...weeks)}周` : '',
+    }
+  }, [rawData])
 
   // 初始化验证选项
   React.useEffect(() => {
@@ -208,6 +231,32 @@ export function FileUpload() {
     [isUploading]
   )
 
+  /**
+   * 清除所有数据
+   */
+  const handleClearData = useCallback(async () => {
+    try {
+      // 清除内存中的数据
+      clearData()
+      // 清除持久化存储的数据
+      await clearPersistentData()
+      
+      toast({
+        title: '数据已清除',
+        description: '所有数据和上传历史已成功清除',
+      })
+      
+      setShowClearConfirm(false)
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : '清除数据失败'
+      toast({
+        title: '清除失败',
+        description: errorMessage,
+        variant: 'destructive',
+      })
+    }
+  }, [clearData, clearPersistentData, toast])
+
   // 如果正在上传，显示进度
   if (isUploading && progress) {
     const phaseLabels = {
@@ -347,19 +396,46 @@ export function FileUpload() {
 
   // 默认上传界面
   return (
-    <div
-      className={cn(
-        'relative rounded-2xl border-2 border-dashed p-16 transition-all duration-300',
-        isDragging
-          ? 'border-blue-500 bg-blue-50/50 scale-[1.02]'
-          : 'border-slate-300 bg-white/80 backdrop-blur-sm hover:border-blue-400 hover:bg-white/90'
+    <div className="space-y-4">
+      {/* 已有数据提示 */}
+      {existingDataStats && (
+        <div className="p-4 bg-green-50 border border-green-200 rounded-lg">
+          <div className="flex items-center gap-3">
+            <Database className="h-5 w-5 text-green-600" />
+            <div className="flex-1">
+              <p className="text-sm font-medium text-green-900">
+                已加载数据：{existingDataStats.totalRecords.toLocaleString()} 条记录
+              </p>
+              <p className="text-xs text-green-700 mt-1">
+                {existingDataStats.years.join(', ')} 年 · {existingDataStats.weekRange} ·
+                <span className="font-semibold ml-1">可继续上传其他周的数据</span>
+              </p>
+            </div>
+            <button
+              onClick={() => setShowClearConfirm(true)}
+              className="px-3 py-1.5 bg-red-100 hover:bg-red-200 text-red-700 text-sm font-medium rounded-md transition-colors flex items-center gap-1.5"
+            >
+              <Trash2 className="h-4 w-4" />
+              清除数据
+            </button>
+          </div>
+        </div>
       )}
-      onDragEnter={handleDragEnter}
-      onDragOver={e => e.preventDefault()}
-      onDragLeave={handleDragLeave}
-      onDrop={handleDrop}
-    >
-      <div className="flex flex-col items-center text-center">
+
+      {/* 上传区域 */}
+      <div
+        className={cn(
+          'relative rounded-2xl border-2 border-dashed p-16 transition-all duration-300',
+          isDragging
+            ? 'border-blue-500 bg-blue-50/50 scale-[1.02]'
+            : 'border-slate-300 bg-white/80 backdrop-blur-sm hover:border-blue-400 hover:bg-white/90'
+        )}
+        onDragEnter={handleDragEnter}
+        onDragOver={e => e.preventDefault()}
+        onDragLeave={handleDragLeave}
+        onDrop={handleDrop}
+      >
+        <div className="flex flex-col items-center text-center">
         <div className="mb-6">
           <div
             className={cn(
@@ -408,6 +484,36 @@ export function FileUpload() {
           支持百万行数据导入
         </p>
       </div>
+
+      {/* 清除数据确认对话框 */}
+      {showClearConfirm && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 max-w-md mx-4 shadow-xl">
+            <div className="flex items-center gap-3 mb-4">
+              <AlertTriangle className="h-6 w-6 text-red-500" />
+              <h3 className="text-lg font-semibold text-slate-900">确认清除数据</h3>
+            </div>
+            <p className="text-slate-600 mb-6">
+              此操作将清除所有已上传的数据和历史记录，且无法恢复。确定要继续吗？
+            </p>
+            <div className="flex gap-3 justify-end">
+              <button
+                onClick={() => setShowClearConfirm(false)}
+                className="px-4 py-2 bg-slate-200 hover:bg-slate-300 text-slate-700 rounded-md transition-colors"
+              >
+                取消
+              </button>
+              <button
+                onClick={handleClearData}
+                className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-md transition-colors"
+              >
+                确认清除
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
     </div>
   )
 }

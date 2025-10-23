@@ -95,6 +95,7 @@ export function ProductFilter() {
               保险类型
             </label>
             <MultiSelectFilter
+              id="product-filter-insurance-type"
               options={availableInsuranceTypes}
               selectedValues={filters.insuranceTypes}
               onChange={handleInsuranceTypeChange}
@@ -108,6 +109,7 @@ export function ProductFilter() {
               业务类型
             </label>
             <MultiSelectFilter
+              id="product-filter-business-type"
               options={availableBusinessTypes}
               selectedValues={filters.businessTypes}
               onChange={handleBusinessTypeChange}
@@ -121,6 +123,7 @@ export function ProductFilter() {
               险别组合
             </label>
             <MultiSelectFilter
+              id="product-filter-coverage-type"
               options={availableCoverageTypes}
               selectedValues={filters.coverageTypes}
               onChange={handleCoverageTypeChange}

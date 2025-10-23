@@ -1,10 +1,16 @@
 'use client'
 
-import { Calendar } from 'lucide-react'
+import { Calendar, ChevronDown } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { useAppStore } from '@/store/use-app-store'
-import { useMemo } from 'react'
+import { useMemo, useState } from 'react'
 import { getWeekEndDate, getDaysFromYearStart } from '@/lib/utils/date-utils'
+import { Button } from '@/components/ui/button'
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from '@/components/ui/popover'
 
 export interface TimeProgressIndicatorProps {
   /**
@@ -14,18 +20,18 @@ export interface TimeProgressIndicatorProps {
 }
 
 /**
- * 格式化日期为 YYYY-MM-DD
+ * 格式化日期为 M月D日
  */
-function formatDate(date: Date): string {
-  const year = date.getFullYear()
-  const month = String(date.getMonth() + 1).padStart(2, '0')
-  const day = String(date.getDate()).padStart(2, '0')
-  return `${year}-${month}-${day}`
+function formatDateShort(date: Date): string {
+  const month = date.getMonth() + 1
+  const day = date.getDate()
+  return `${month}月${day}日`
 }
 
 /**
  * 时间进度指示器组件
- * 显示：截至日期、已过天数、剩余天数
+ * 单行显示：截至YYYY年第W周、M月D日，已过N天（N%），当年剩余N天（N%）
+ * 整合周序号选择功能
  */
 export function TimeProgressIndicator({
   className,
@@ -34,6 +40,23 @@ export function TimeProgressIndicator({
   const viewMode = useAppStore(state => state.filters.viewMode)
   const singleModeWeek = useAppStore(state => state.filters.singleModeWeek)
   const filterYears = useAppStore(state => state.filters.years)
+  const updateFilters = useAppStore(state => state.updateFilters)
+  const [isWeekSelectorOpen, setIsWeekSelectorOpen] = useState(false)
+
+  // 获取可用的周次选项
+  const availableWeeks = useMemo(() => {
+    if (rawData.length === 0) return []
+    
+    const weeks = Array.from(new Set(rawData.map(r => r.week_number)))
+      .sort((a, b) => a - b)
+      .map(week => ({
+        label: `第${week}周`,
+        value: week.toString(),
+        week,
+      }))
+    
+    return weeks
+  }, [rawData])
 
   // 计算当前的截止日期和时间进度
   const timeProgress = useMemo(() => {
@@ -50,7 +73,7 @@ export function TimeProgressIndicator({
       const progressPercent = (daysPassed / 365) * 100
 
       return {
-        endDate: formatDate(now),
+        endDate: formatDateShort(now),
         year: now.getFullYear(),
         weekNumber: null,
         daysPassed,
@@ -89,7 +112,7 @@ export function TimeProgressIndicator({
     const progressPercent = (daysPassed / 365) * 100
 
     return {
-      endDate: formatDate(weekEndDate),
+      endDate: formatDateShort(weekEndDate),
       year: selectedYear,
       weekNumber: selectedWeek,
       daysPassed,
@@ -98,51 +121,89 @@ export function TimeProgressIndicator({
     }
   }, [rawData, viewMode, singleModeWeek, filterYears])
 
+  // 处理周次选择
+  const handleWeekSelect = (week: number) => {
+    if (viewMode === 'single') {
+      updateFilters({
+        singleModeWeek: week,
+        weeks: [week],
+      })
+    }
+    setIsWeekSelectorOpen(false)
+  }
+
+  // 获取当前选择的周次显示文本
+  const getSelectedWeekText = () => {
+    if (timeProgress.weekNumber) {
+      return `第${timeProgress.weekNumber}周`
+    }
+    return '选择周次'
+  }
+
   return (
     <div
       className={cn(
-        'rounded-xl border border-slate-200 bg-gradient-to-br from-blue-50/80 to-cyan-50/80 p-4 backdrop-blur-sm',
+        'rounded-lg border border-slate-200 bg-gradient-to-r from-blue-50/80 to-cyan-50/80 px-4 py-3 backdrop-blur-sm',
         className
       )}
     >
-      {/* 标题 */}
-      <div className="mb-3 flex items-center gap-2">
-        <Calendar className="h-4 w-4 text-blue-600" />
-        <h3 className="text-sm font-semibold text-slate-700">时间进度</h3>
-      </div>
-
-      {/* 核心信息 */}
-      <div className="space-y-2">
-        {/* 截至日期 */}
-        <div className="flex items-center justify-between">
-          <span className="text-xs text-slate-600">截至</span>
-          <span className="font-mono text-sm font-bold text-blue-700">
-            {timeProgress.endDate}
-            {timeProgress.weekNumber && (
-              <span className="ml-2 text-xs text-slate-500">
-                (第{timeProgress.weekNumber}周)
+      <div className="flex items-center justify-between text-sm">
+        {/* 左侧：截至时间信息 */}
+        <div className="flex items-center gap-2">
+          <Calendar className="h-4 w-4 text-blue-600" />
+          <span className="text-slate-700">
+            截至{timeProgress.year}年
+            {viewMode === 'single' && availableWeeks.length > 0 ? (
+              <Popover open={isWeekSelectorOpen} onOpenChange={setIsWeekSelectorOpen}>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="h-auto p-1 font-medium text-blue-600 hover:bg-blue-100"
+                  >
+                    {getSelectedWeekText()}
+                    <ChevronDown className="ml-1 h-3 w-3" />
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-48 p-2" align="start">
+                  <div className="space-y-1">
+                    {availableWeeks.map((week) => (
+                      <Button
+                        key={week.week}
+                        variant="ghost"
+                        size="sm"
+                        className={cn(
+                          "w-full justify-start text-left",
+                          timeProgress.weekNumber === week.week && "bg-blue-100 text-blue-700"
+                        )}
+                        onClick={() => handleWeekSelect(week.week)}
+                      >
+                        {week.label}
+                      </Button>
+                    ))}
+                  </div>
+                </PopoverContent>
+              </Popover>
+            ) : (
+              <span className="font-medium text-blue-600">
+                {getSelectedWeekText()}
               </span>
             )}
+            、{timeProgress.endDate}
           </span>
         </div>
 
-        {/* 已过天数 */}
-        <div className="flex items-center justify-between">
-          <span className="text-xs text-slate-600">已过</span>
-          <span className="font-mono text-sm font-semibold text-green-600">
-            {timeProgress.daysPassed}天
-            <span className="ml-1 text-xs text-slate-500">
+        {/* 右侧：进度信息 */}
+        <div className="flex items-center gap-4 text-xs">
+          <span className="text-green-600">
+            已过{timeProgress.daysPassed}天
+            <span className="ml-1 text-slate-500">
               ({timeProgress.progressPercent.toFixed(1)}%)
             </span>
           </span>
-        </div>
-
-        {/* 剩余天数 */}
-        <div className="flex items-center justify-between">
-          <span className="text-xs text-slate-600">剩余</span>
-          <span className="font-mono text-sm font-semibold text-orange-600">
-            {timeProgress.daysRemaining}天
-            <span className="ml-1 text-xs text-slate-500">
+          <span className="text-orange-600">
+            当年剩余{timeProgress.daysRemaining}天
+            <span className="ml-1 text-slate-500">
               ({(100 - timeProgress.progressPercent).toFixed(1)}%)
             </span>
           </span>
@@ -150,8 +211,8 @@ export function TimeProgressIndicator({
       </div>
 
       {/* 进度条 */}
-      <div className="mt-3">
-        <div className="h-2 overflow-hidden rounded-full bg-slate-200">
+      <div className="mt-2">
+        <div className="h-1.5 overflow-hidden rounded-full bg-slate-200">
           <div
             className="h-full rounded-full bg-gradient-to-r from-blue-500 to-cyan-500 transition-all duration-500"
             style={{ width: `${timeProgress.progressPercent}%` }}

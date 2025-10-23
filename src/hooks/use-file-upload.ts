@@ -111,7 +111,8 @@ export function useFileUpload() {
   const [validationOptions, setValidationOptions] =
     useState<FileValidationOptions>(DEFAULT_VALIDATION_OPTIONS)
 
-  const { setRawData, setError, setLoading } = useAppStore()
+  const { setRawData, appendRawData, setError, setLoading } = useAppStore()
+  const rawData = useAppStore(state => state.rawData)
 
   /**
    * 验证单个文件
@@ -349,9 +350,14 @@ export function useFileUpload() {
             console.log(
               `[File Upload] 添加 ${result.result.data.length} 条有效记录到存储`
             )
-            const existingData = useAppStore.getState().rawData
-            const newData = [...existingData, ...result.result.data]
-            setRawData(newData)
+            // 使用追加模式，支持多次上传不同周的数据
+            if (rawData.length === 0) {
+              // 首次上传，直接设置
+              setRawData(result.result.data)
+            } else {
+              // 后续上传，追加并去重
+              appendRawData(result.result.data)
+            }
           } else {
             console.warn(
               `[File Upload] 文件 ${result.file.name} 没有有效数据可添加`
@@ -444,7 +450,7 @@ export function useFileUpload() {
         }, 3000)
       }
     },
-    [uploadSingleFile, validateFiles, setRawData, setError, setLoading]
+    [uploadSingleFile, validateFiles, setRawData, appendRawData, rawData, setError, setLoading]
   )
 
   /**

@@ -17,8 +17,20 @@ import { normalizeChineseText } from '@/lib/utils'
 export function useKPI(): KPIResult | null {
   const filteredData = useFilteredData()
   const rawData = useAppStore(state => state.rawData)
-  const filters = useAppStore(state => state.filters)
-  const dataViewType = filters.dataViewType
+  // 使用细粒度选择器避免对象引用问题
+  const businessTypes = useAppStore(state => state.filters.businessTypes)
+  const organizations = useAppStore(state => state.filters.organizations)
+  const customerCategories = useAppStore(state => state.filters.customerCategories)
+  const insuranceTypes = useAppStore(state => state.filters.insuranceTypes)
+  const years = useAppStore(state => state.filters.years)
+  const coverageTypes = useAppStore(state => state.filters.coverageTypes)
+  const vehicleGrades = useAppStore(state => state.filters.vehicleGrades)
+  const terminalSources = useAppStore(state => state.filters.terminalSources)
+  const isNewEnergy = useAppStore(state => state.filters.isNewEnergy)
+  const renewalStatuses = useAppStore(state => state.filters.renewalStatuses)
+  const viewMode = useAppStore(state => state.filters.viewMode)
+  const singleModeWeek = useAppStore(state => state.filters.singleModeWeek)
+  const dataViewType = useAppStore(state => state.filters.dataViewType)
   const premiumTargets = useAppStore(state => state.premiumTargets)
 
   const currentTargetYuan = useMemo(() => {
@@ -27,8 +39,8 @@ export function useKPI(): KPIResult | null {
     // 优先级：业务类型 > 三级机构 > 客户分类 > 保险类型 > 总体目标
 
     // 1. 业务类型目标
-    if (filters.businessTypes.length > 0) {
-      const sum = filters.businessTypes.reduce((acc, type) => {
+    if (businessTypes.length > 0) {
+      const sum = businessTypes.reduce((acc, type) => {
         const normalized = normalizeChineseText(type)
         return (
           acc +
@@ -39,8 +51,8 @@ export function useKPI(): KPIResult | null {
     }
 
     // 2. 三级机构目标
-    if (filters.organizations.length > 0) {
-      const sum = filters.organizations.reduce((acc, org) => {
+    if (organizations.length > 0) {
+      const sum = organizations.reduce((acc, org) => {
         const normalized = normalizeChineseText(org)
         return (
           acc +
@@ -53,8 +65,8 @@ export function useKPI(): KPIResult | null {
     }
 
     // 3. 客户分类目标
-    if (filters.customerCategories.length > 0) {
-      const sum = filters.customerCategories.reduce((acc, category) => {
+    if (customerCategories.length > 0) {
+      const sum = customerCategories.reduce((acc, category) => {
         const normalized = normalizeChineseText(category)
         return (
           acc +
@@ -65,8 +77,8 @@ export function useKPI(): KPIResult | null {
     }
 
     // 4. 保险类型目标
-    if (filters.insuranceTypes.length > 0) {
-      const sum = filters.insuranceTypes.reduce((acc, type) => {
+    if (insuranceTypes.length > 0) {
+      const sum = insuranceTypes.reduce((acc, type) => {
         const normalized = normalizeChineseText(type)
         return (
           acc +
@@ -78,19 +90,35 @@ export function useKPI(): KPIResult | null {
 
     // 5. 总体目标
     return premiumTargets.overall > 0 ? premiumTargets.overall : null
-  }, [filters, premiumTargets])
+  }, [businessTypes, organizations, customerCategories, insuranceTypes, premiumTargets])
 
   const kpiResult = useMemo(() => {
     if (filteredData.length === 0) {
       return null
     }
 
+    // 重建 filters 对象供内部使用
+    const filters = {
+      viewMode,
+      singleModeWeek,
+      years,
+      organizations,
+      insuranceTypes,
+      businessTypes,
+      coverageTypes,
+      customerCategories,
+      vehicleGrades,
+      terminalSources,
+      isNewEnergy,
+      renewalStatuses,
+    }
+
     // 获取当前选择的周次和年份
     const currentWeek =
-      filters.viewMode === 'single' ? filters.singleModeWeek : null
+      viewMode === 'single' ? singleModeWeek : null
     const currentYear =
-      filters.years.length > 0
-        ? Math.max(...filters.years)
+      years.length > 0
+        ? Math.max(...years)
         : new Date().getFullYear()
 
     // 当周值模式：直接计算
@@ -199,7 +227,24 @@ export function useKPI(): KPIResult | null {
       currentWeekNumber: currentWeek,
       year: currentYear,
     })
-  }, [filteredData, rawData, filters, dataViewType, currentTargetYuan])
+  }, [
+    filteredData,
+    rawData,
+    viewMode,
+    singleModeWeek,
+    years,
+    organizations,
+    insuranceTypes,
+    businessTypes,
+    coverageTypes,
+    customerCategories,
+    vehicleGrades,
+    terminalSources,
+    isNewEnergy,
+    renewalStatuses,
+    dataViewType,
+    currentTargetYuan,
+  ])
 
   return kpiResult
 }

@@ -105,6 +105,7 @@ export function CustomerFilter() {
               客户分类
             </label>
             <MultiSelectFilter
+              id="customer-filter-category"
               options={availableCustomerCategories}
               selectedValues={filters.customerCategories}
               onChange={handleCustomerCategoryChange}
@@ -118,6 +119,7 @@ export function CustomerFilter() {
               车险评级
             </label>
             <MultiSelectFilter
+              id="customer-filter-vehicle-grade"
               options={availableVehicleGrades}
               selectedValues={filters.vehicleGrades}
               onChange={handleVehicleGradeChange}
@@ -131,6 +133,7 @@ export function CustomerFilter() {
               新续转状态
             </label>
             <MultiSelectFilter
+              id="customer-filter-renewal-status"
               options={availableRenewalStatuses}
               selectedValues={filters.renewalStatuses}
               onChange={handleRenewalStatusChange}

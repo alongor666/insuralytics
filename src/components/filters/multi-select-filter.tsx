@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useId } from 'react'
 import { ChevronsUpDown, Check } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import {
@@ -25,6 +25,8 @@ interface MultiSelectFilterProps {
   placeholder?: string
   searchPlaceholder?: string
   emptyText?: string
+  /** 唯一标识符，用于生成唯一的表单ID */
+  id?: string
 }
 
 export function MultiSelectFilter({
@@ -34,8 +36,12 @@ export function MultiSelectFilter({
   placeholder = '选择选项',
   searchPlaceholder = '搜索...',
   emptyText = '未找到选项',
+  id,
 }: MultiSelectFilterProps) {
   const [open, setOpen] = useState(false)
+  // 使用 React 的 useId 生成唯一ID，如果没有传入 id 则自动生成
+  const autoId = useId()
+  const uniqueId = id || autoId
   const optionValues = options.map(opt => opt.value)
   const isAllSelected =
     optionValues.length > 0 && selectedValues.length === optionValues.length
@@ -137,6 +143,8 @@ export function MultiSelectFilter({
       >
         <Command className="rounded-2xl">
           <CommandInput
+            id={`${uniqueId}-search`}
+            name={`${uniqueId}-search`}
             placeholder={searchPlaceholder}
             className="h-12 text-base"
           />

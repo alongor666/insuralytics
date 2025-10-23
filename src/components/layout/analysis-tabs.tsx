@@ -3,6 +3,7 @@
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs'
 
 export type AnalysisTabValue =
+  | 'data-management'
   | 'kpi'
   | 'trend'
   | 'thematic'
@@ -17,6 +18,7 @@ interface AnalysisTabsProps {
 }
 
 const TAB_ITEMS: Array<{ value: AnalysisTabValue; label: string }> = [
+  { value: 'data-management', label: '数据管理' },
   { value: 'kpi', label: 'KPI看板' },
   { value: 'trend', label: '周趋势分析' },
   { value: 'thematic', label: '专题分析' },
