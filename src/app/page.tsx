@@ -175,24 +175,10 @@ export default function HomePage() {
             </div>
           )}
 
-          {/* 顶部工具栏和时间进度 - 放置在统一导航之下 */}
+          {/* 顶部工具栏（已整合时间进度） - 放置在统一导航之下，数据管理页面不显示 */}
           {hasData && activeTab !== 'data-management' && (
-            <div className="mb-4 flex items-start gap-4">
-              <div className="flex-1">
-                <TopToolbar rawCount={rawData.length} />
-              </div>
-              <div className="w-80">
-                <TimeProgressIndicator />
-              </div>
-            </div>
-          )}
-
-          {/* 数据管理页面的时间进度 - 单独显示 */}
-          {hasData && activeTab === 'data-management' && (
-            <div className="mb-4 flex justify-end">
-              <div className="w-80">
-                <TimeProgressIndicator />
-              </div>
+            <div className="mb-4">
+              <TopToolbar rawCount={rawData.length} />
             </div>
           )}
         </div>
