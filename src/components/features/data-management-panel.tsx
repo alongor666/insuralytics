@@ -1,5 +1,5 @@
 /**
- * 数据管理面板 - 包含数据导入、导出、历史记录和清空功能
+ * 数据管理面板 - 包含数据导入、导出、清空功能和业务维度筛选
  */
 
 'use client'
@@ -7,15 +7,15 @@
 import { useState } from 'react'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { FileUpload } from './file-upload'
-import { UploadHistory } from './upload-history'
 import { DataExport } from './data-export'
 import { PDFReportExport } from './pdf-report-export'
+import { FilterPanel } from '@/components/filters/filter-panel'
 import { useAppStore } from '@/store/use-app-store'
 import { usePersistData } from '@/hooks/use-persist-data'
-import { Database, History, Download, Trash2 } from 'lucide-react'
+import { Database, Download, Trash2, Filter } from 'lucide-react'
 
 export function DataManagementPanel() {
-  const [activeSubTab, setActiveSubTab] = useState<'upload' | 'history'>('upload')
+  const [activeSubTab, setActiveSubTab] = useState<'upload' | 'export' | 'filters'>('upload')
   const { clearPersistedData } = usePersistData()
   const rawData = useAppStore(state => state.rawData)
 
@@ -37,15 +37,13 @@ export function DataManagementPanel() {
           <div>
             <h2 className="text-xl font-semibold text-slate-800">导入导出</h2>
             <p className="text-sm text-slate-600 mt-1">
-              管理数据导入、导出和历史记录
+              管理数据导入、导出和业务筛选
             </p>
           </div>
         </div>
 
         {/* 操作按钮组 */}
         <div className="flex items-center gap-3">
-          <DataExport />
-          <PDFReportExport />
           {rawData.length > 0 && (
             <button
               onClick={handleClearData}
@@ -60,16 +58,20 @@ export function DataManagementPanel() {
 
       {/* 主内容区 - 子标签页 */}
       <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
-        <Tabs value={activeSubTab} onValueChange={(v) => setActiveSubTab(v as 'upload' | 'history')}>
+        <Tabs value={activeSubTab} onValueChange={(v) => setActiveSubTab(v as 'upload' | 'export' | 'filters')}>
           <div className="border-b border-slate-200 px-6 pt-4">
             <TabsList className="bg-slate-100">
               <TabsTrigger value="upload" className="gap-2">
                 <Database className="w-4 h-4" />
-                数据导入
+                导入数据
               </TabsTrigger>
-              <TabsTrigger value="history" className="gap-2">
-                <History className="w-4 h-4" />
-                导入记录
+              <TabsTrigger value="export" className="gap-2">
+                <Download className="w-4 h-4" />
+                导出数据
+              </TabsTrigger>
+              <TabsTrigger value="filters" className="gap-2">
+                <Filter className="w-4 h-4" />
+                业务筛选
               </TabsTrigger>
             </TabsList>
           </div>
@@ -78,8 +80,38 @@ export function DataManagementPanel() {
             <FileUpload />
           </TabsContent>
 
-          <TabsContent value="history" className="p-6 m-0">
-            <UploadHistory />
+          <TabsContent value="export" className="p-6 m-0">
+            <div className="space-y-6">
+              <div className="rounded-xl border border-slate-200 bg-slate-50/60 p-6">
+                <div className="flex items-start justify-between gap-4">
+                  <div>
+                    <h3 className="text-lg font-semibold text-slate-800">导出结构化数据</h3>
+                    <p className="mt-2 text-sm text-slate-600">
+                      将当前工作区的数据按需导出为 CSV 文件，支持全部数据或筛选结果。
+                    </p>
+                  </div>
+                  <div className="shrink-0">
+                    <DataExport />
+                  </div>
+                </div>
+              </div>
+
+              <div className="rounded-xl border border-slate-200 bg-slate-50/60 p-6">
+                <div className="flex items-start justify-between gap-4">
+                  <div>
+                    <h3 className="text-lg font-semibold text-slate-800">导出可视化报告</h3>
+                    <p className="mt-2 text-sm text-slate-600">
+                      一键生成 PDF 报告，包含看板指标和核心图表，便于团队共享。
+                    </p>
+                  </div>
+                  <PDFReportExport className="shrink-0" />
+                </div>
+              </div>
+            </div>
+          </TabsContent>
+
+          <TabsContent value="filters" className="p-6 m-0">
+            <FilterPanel />
           </TabsContent>
         </Tabs>
       </div>

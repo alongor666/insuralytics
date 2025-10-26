@@ -9,6 +9,7 @@ import { useAppStore, useFilteredData } from '@/store/use-app-store'
 import { kpiEngine } from '@/lib/calculations/kpi-engine'
 import type { KPIResult, InsuranceRecord } from '@/types/insurance'
 import { normalizeChineseText } from '@/lib/utils'
+import { safeMax } from '@/lib/utils/array-utils'
 
 /**
  * 使用 KPI 计算
@@ -118,7 +119,7 @@ export function useKPI(): KPIResult | null {
       viewMode === 'single' ? singleModeWeek : null
     const currentYear =
       years.length > 0
-        ? Math.max(...years)
+        ? safeMax(years)
         : new Date().getFullYear()
 
     // 当周值模式：直接计算

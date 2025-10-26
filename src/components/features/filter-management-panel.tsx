@@ -10,10 +10,18 @@ import { CompactTimeFilter } from '@/components/filters/compact-time-filter'
 import { CompactOrganizationFilter } from '@/components/filters/compact-organization-filter'
 import { FilterPanel } from '@/components/filters/filter-panel'
 import { useAppStore } from '@/store/use-app-store'
+import { useFilterStore } from '@/store/domains/filterStore'
 import { Button } from '@/components/ui/button'
 
 export function FilterManagementPanel() {
-  const { resetFilters } = useAppStore()
+  const resetAppFilters = useAppStore(state => state.resetFilters)
+  const resetFilters = useFilterStore(state => state.resetFilters)
+
+  // 同步重置两个store的筛选器
+  const handleResetFilters = () => {
+    resetFilters()
+    resetAppFilters()
+  }
 
   return (
     <div className="space-y-6">
@@ -30,7 +38,7 @@ export function FilterManagementPanel() {
         </div>
 
         <Button
-          onClick={resetFilters}
+          onClick={handleResetFilters}
           variant="outline"
           className="gap-2"
         >
@@ -55,7 +63,7 @@ export function FilterManagementPanel() {
           {/* 周序号筛选 */}
           <div className="flex items-center gap-3">
             <span className="text-sm font-medium text-slate-600 whitespace-nowrap">周序号:</span>
-            <CompactTimeFilter />
+            <CompactTimeFilter mode="flexible" />
           </div>
 
           {/* 分隔线 */}

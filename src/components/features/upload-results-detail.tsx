@@ -15,6 +15,8 @@ import {
   Download,
   Search,
   BarChart3,
+  Calendar,
+  CheckCircle2,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import type { BatchUploadResult } from '@/hooks/use-file-upload'
@@ -379,6 +381,95 @@ export function UploadResultsDetail({
         )}
       </div>
 
+      {/* 周次导入统计 */}
+      {batchResult.weekAnalysis && batchResult.weekAnalysis.totalWeeks > 0 && (
+        <div className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-2xl border border-blue-200 p-6">
+          <div className="flex items-center gap-3 mb-4">
+            <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">
+              <Calendar className="w-5 h-5 text-blue-600" />
+            </div>
+            <h4 className="text-lg font-semibold text-slate-800">周次导入统计</h4>
+          </div>
+
+          {/* 周次统计卡片 */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+            <div className="bg-white/80 backdrop-blur-sm p-4 rounded-lg border border-blue-100">
+              <div className="text-sm text-slate-600 mb-1">总周次数</div>
+              <div className="text-2xl font-semibold text-slate-800">
+                {batchResult.weekAnalysis.totalWeeks}
+              </div>
+            </div>
+
+            <div className="bg-green-50/80 backdrop-blur-sm p-4 rounded-lg border border-green-200">
+              <div className="flex items-center gap-2 mb-1">
+                <CheckCircle2 className="w-4 h-4 text-green-600" />
+                <div className="text-sm text-green-700">新导入周次</div>
+              </div>
+              <div className="text-2xl font-semibold text-green-600">
+                {batchResult.weekAnalysis.newWeeks}
+              </div>
+            </div>
+
+            <div className="bg-yellow-50/80 backdrop-blur-sm p-4 rounded-lg border border-yellow-200">
+              <div className="flex items-center gap-2 mb-1">
+                <AlertTriangle className="w-4 h-4 text-yellow-600" />
+                <div className="text-sm text-yellow-700">跳过周次</div>
+              </div>
+              <div className="text-2xl font-semibold text-yellow-600">
+                {batchResult.weekAnalysis.skippedWeeks}
+              </div>
+            </div>
+          </div>
+
+          {/* 周次详细列表 */}
+          {batchResult.weekAnalysis.weekResults.length > 0 && (
+            <div className="bg-white/60 backdrop-blur-sm rounded-lg p-4">
+              <h5 className="text-sm font-medium text-slate-700 mb-3">周次详情</h5>
+              <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-2">
+                {batchResult.weekAnalysis.weekResults.map((weekResult, index) => (
+                  <div
+                    key={index}
+                    className={cn(
+                      'px-3 py-2 rounded-md text-sm font-medium flex items-center justify-between',
+                      weekResult.status === 'success' &&
+                        'bg-green-100 text-green-700 border border-green-200',
+                      weekResult.status === 'skipped' &&
+                        'bg-yellow-100 text-yellow-700 border border-yellow-200',
+                      weekResult.status === 'failed' &&
+                        'bg-red-100 text-red-700 border border-red-200'
+                    )}
+                  >
+                    <span>
+                      {weekResult.year}年第{weekResult.weekNumber}周
+                    </span>
+                    {weekResult.status === 'success' && (
+                      <CheckCircle2 className="w-3 h-3" />
+                    )}
+                    {weekResult.status === 'skipped' && (
+                      <AlertTriangle className="w-3 h-3" />
+                    )}
+                    {weekResult.status === 'failed' && <XCircle className="w-3 h-3" />}
+                  </div>
+                ))}
+              </div>
+
+              {/* 跳过原因说明 */}
+              {batchResult.weekAnalysis.skippedWeeks > 0 && (
+                <div className="mt-4 p-3 bg-yellow-50 border border-yellow-200 rounded-md">
+                  <div className="flex items-start gap-2">
+                    <AlertTriangle className="w-4 h-4 text-yellow-600 mt-0.5 flex-shrink-0" />
+                    <div className="text-sm text-yellow-800">
+                      <strong>跳过原因：</strong>
+                      这些周次的数据已存在于系统中，为避免重复导入，已自动跳过。
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+      )}
+
       {/* 错误详情分析 */}
       {errorStats.totalErrors > 0 && (
         <div className="bg-white rounded-2xl border border-slate-200 overflow-hidden">
@@ -590,6 +681,43 @@ export function UploadResultsDetail({
                           </span>
                         </div>
                       </div>
+
+                      {/* 周次信息 */}
+                      {result.weekInfo && result.weekInfo.detectedWeeks.length > 0 && (
+                        <div className="mt-3 p-3 bg-blue-50 border border-blue-200 rounded-md">
+                          <div className="flex items-center gap-2 mb-2">
+                            <Calendar className="w-4 h-4 text-blue-600" />
+                            <h6 className="text-sm font-medium text-blue-900">
+                              周次信息
+                            </h6>
+                          </div>
+                          <div className="space-y-2 text-sm">
+                            {result.weekInfo.newWeeks.length > 0 && (
+                              <div className="flex items-center gap-2">
+                                <CheckCircle2 className="w-3 h-3 text-green-600" />
+                                <span className="text-green-700">
+                                  新导入 {result.weekInfo.newWeeks.length} 个周次：
+                                  {result.weekInfo.newWeeks
+                                    .map(w => `${w.year}年第${w.weekNumber}周`)
+                                    .join('、')}
+                                </span>
+                              </div>
+                            )}
+                            {result.weekInfo.conflictWeeks.length > 0 && (
+                              <div className="flex items-center gap-2">
+                                <AlertTriangle className="w-3 h-3 text-yellow-600" />
+                                <span className="text-yellow-700">
+                                  跳过 {result.weekInfo.conflictWeeks.length} 个周次：
+                                  {result.weekInfo.conflictWeeks
+                                    .map(w => `${w.year}年第${w.weekNumber}周`)
+                                    .join('、')}
+                                  （已存在）
+                                </span>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      )}
 
                       {result.result.errors &&
                         result.result.errors.length > 0 && (

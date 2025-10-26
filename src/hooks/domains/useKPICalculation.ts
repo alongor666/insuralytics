@@ -24,6 +24,7 @@ import { KPIService } from '@/services/KPIService'
 import { DataService } from '@/services/DataService'
 import type { KPIResult } from '@/types/insurance'
 import { normalizeChineseText } from '@/lib/utils'
+import { safeMax } from '@/lib/utils/array-utils'
 
 /**
  * 基础KPI计算Hook
@@ -113,7 +114,7 @@ export function useKPICalculation() {
       filters.viewMode === 'single' ? filters.singleModeWeek : null
     const currentYear =
       filters.years && filters.years.length > 0
-        ? Math.max(...filters.years)
+        ? safeMax(filters.years)
         : new Date().getFullYear()
 
     return KPIService.calculate(filteredData, {

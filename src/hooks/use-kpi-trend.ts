@@ -55,7 +55,7 @@ function generateFiltersHash(filters: FilterState): string {
 }
 
 /**
- * 按周计算KPI趋势
+ * 按周计算KPI趋势 - 性能优化版
  * @param data 保险数据
  * @param kpiKey KPI键名
  * @param limit 返回最近几周的数据（默认12周）
@@ -70,134 +70,130 @@ function calculateKPITrend(
     return []
   }
 
-  // 按年度和周次分组
+  // 性能优化：限制最大处理周数
+  const MAX_WEEKS_TO_PROCESS = 52
+  const effectiveLimit = Math.min(limit, MAX_WEEKS_TO_PROCESS)
+
+  // 按年度和周次分组 - 优化版：避免重复创建数组
   const weeklyData = new Map<string, InsuranceRecord[]>()
 
-  data.forEach(record => {
+  // 优化：使用传统for循环代替forEach，性能更好
+  for (let i = 0; i < data.length; i++) {
+    const record = data[i]
     const key = `${record.policy_start_year}-${record.week_number}`
-    if (!weeklyData.has(key)) {
-      weeklyData.set(key, [])
+    const existing = weeklyData.get(key)
+    if (existing) {
+      existing.push(record)
+    } else {
+      weeklyData.set(key, [record])
     }
-    weeklyData.get(key)!.push(record)
-  })
+  }
 
   // 获取所有周次并排序
   const weeks = Array.from(weeklyData.keys()).sort()
 
   // 取最近N周
-  const recentWeeks = weeks.slice(-limit)
+  const recentWeeks = weeks.slice(-effectiveLimit)
 
   // 计算每周的KPI值
-  // 支持断点显示：如果某周无数据，返回null（而非0）
-  const trendData = recentWeeks.map(weekKey => {
-    const weekRecords = weeklyData.get(weekKey) || []
-    if (weekRecords.length === 0) {
-      return null // 该周无数据，趋势图将显示断点
-    }
-    const kpi = calculateKPIs(weekRecords)
-    const value = kpi[kpiKey]
+  // 优化：预分配数组大小，避免动态扩容
+  const trendData: (number | null)[] = new Array(recentWeeks.length)
 
-    // 如果计算结果为null，也保持null
-    return typeof value === 'number' ? value : null
-  })
+  // 优化：使用for循环代替map，减少函数调用开销
+  for (let i = 0; i < recentWeeks.length; i++) {
+    const weekKey = recentWeeks[i]
+    const weekRecords = weeklyData.get(weekKey)
+
+    if (!weekRecords || weekRecords.length === 0) {
+      trendData[i] = null // 该周无数据
+      continue
+    }
+
+    try {
+      const kpi = calculateKPIs(weekRecords)
+      const value = kpi[kpiKey]
+      trendData[i] = typeof value === 'number' ? value : null
+    } catch (error) {
+      console.warn(`计算第 ${weekKey} 周的KPI时出错:`, error)
+      trendData[i] = null
+    }
+  }
 
   return trendData
 }
 
 /**
- * 应用筛选条件
+ * 应用筛选条件 - 性能优化版
  */
 function applyFilters(
   data: InsuranceRecord[],
   filters: FilterState
 ): InsuranceRecord[] {
+  // 性能优化：预先转换为Set以加速查找（O(1) vs O(n)）
+  const yearsSet = filters.years.length > 0 ? new Set(filters.years) : null
+  const weeksSet = filters.weeks.length > 0 ? new Set(filters.weeks) : null
+  const orgsSet = filters.organizations.length > 0 ? new Set(filters.organizations) : null
+  const insTypesSet = filters.insuranceTypes.length > 0 ? new Set(filters.insuranceTypes) : null
+  const bizTypesSet = filters.businessTypes.length > 0 ? new Set(filters.businessTypes) : null
+  const covTypesSet = filters.coverageTypes.length > 0 ? new Set(filters.coverageTypes) : null
+  const custCatsSet = filters.customerCategories.length > 0 ? new Set(filters.customerCategories) : null
+  const vehGradesSet = filters.vehicleGrades.length > 0 ? new Set(filters.vehicleGrades) : null
+  const termSourcesSet = filters.terminalSources.length > 0 ? new Set(filters.terminalSources) : null
+  const renewalStatusesSet = filters.renewalStatuses.length > 0 ? new Set(filters.renewalStatuses) : null
+
   return data.filter(record => {
     // 年度筛选
-    if (
-      filters.years.length > 0 &&
-      !filters.years.includes(record.policy_start_year)
-    ) {
+    if (yearsSet && !yearsSet.has(record.policy_start_year)) {
       return false
     }
 
     // 周次筛选
-    if (
-      filters.weeks.length > 0 &&
-      !filters.weeks.includes(record.week_number)
-    ) {
+    if (weeksSet && !weeksSet.has(record.week_number)) {
       return false
     }
 
     // 机构筛选
-    if (
-      filters.organizations.length > 0 &&
-      !filters.organizations.includes(record.third_level_organization)
-    ) {
+    if (orgsSet && !orgsSet.has(record.third_level_organization)) {
       return false
     }
 
     // 险种筛选
-    if (
-      filters.insuranceTypes.length > 0 &&
-      !filters.insuranceTypes.includes(record.insurance_type)
-    ) {
+    if (insTypesSet && !insTypesSet.has(record.insurance_type)) {
       return false
     }
 
     // 业务类型筛选
-    if (
-      filters.businessTypes.length > 0 &&
-      !filters.businessTypes.includes(record.business_type_category)
-    ) {
+    if (bizTypesSet && !bizTypesSet.has(record.business_type_category)) {
       return false
     }
 
     // 险别筛选
-    if (
-      filters.coverageTypes.length > 0 &&
-      !filters.coverageTypes.includes(record.coverage_type)
-    ) {
+    if (covTypesSet && !covTypesSet.has(record.coverage_type)) {
       return false
     }
 
     // 客户分类筛选
-    if (
-      filters.customerCategories.length > 0 &&
-      !filters.customerCategories.includes(record.customer_category_3)
-    ) {
+    if (custCatsSet && !custCatsSet.has(record.customer_category_3)) {
       return false
     }
 
     // 车险评级筛选
-    if (
-      filters.vehicleGrades.length > 0 &&
-      record.vehicle_insurance_grade &&
-      !filters.vehicleGrades.includes(record.vehicle_insurance_grade)
-    ) {
+    if (vehGradesSet && record.vehicle_insurance_grade && !vehGradesSet.has(record.vehicle_insurance_grade)) {
       return false
     }
 
     // 终端来源筛选
-    if (
-      filters.terminalSources.length > 0 &&
-      !filters.terminalSources.includes(record.terminal_source)
-    ) {
+    if (termSourcesSet && !termSourcesSet.has(record.terminal_source)) {
       return false
     }
 
     // 新能源车筛选
-    if (
-      filters.isNewEnergy !== null &&
-      record.is_new_energy_vehicle !== filters.isNewEnergy
-    ) {
+    if (filters.isNewEnergy !== null && record.is_new_energy_vehicle !== filters.isNewEnergy) {
       return false
     }
 
     // 续保状态筛选
-    if (
-      filters.renewalStatuses.length > 0 &&
-      !filters.renewalStatuses.includes(record.renewal_status)
-    ) {
+    if (renewalStatusesSet && !renewalStatusesSet.has(record.renewal_status)) {
       return false
     }
 

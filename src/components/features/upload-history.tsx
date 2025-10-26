@@ -1,7 +1,7 @@
 'use client'
 
 import React, { useState, useEffect } from 'react'
-import { Clock, FileText, CheckCircle, XCircle, AlertCircle, Eye, EyeOff } from 'lucide-react'
+import { Clock, FileText, CheckCircle, XCircle, AlertCircle, Eye, EyeOff, Calendar } from 'lucide-react'
 import { useAppStore } from '@/store/use-app-store'
 import { UploadHistoryRecord } from '@/lib/storage/data-persistence'
 
@@ -191,7 +191,49 @@ export function UploadHistory() {
                         {record.validRecords.toLocaleString()}
                       </div>
                     </div>
-                    
+
+                    {/* 周次信息 */}
+                    {record.weekInfo && record.weekInfo.totalWeeks > 0 && (
+                      <div className="mt-3 p-3 bg-blue-50 border border-blue-200 rounded-md">
+                        <div className="flex items-center gap-2 mb-2">
+                          <Calendar className="h-4 w-4 text-blue-600" />
+                          <span className="text-sm font-medium text-blue-900">周次信息</span>
+                        </div>
+                        <div className="grid grid-cols-2 md:grid-cols-3 gap-3 text-sm">
+                          <div>
+                            <span className="text-slate-600">总周次：</span>
+                            <span className="font-medium text-slate-800">
+                              {record.weekInfo.totalWeeks}
+                            </span>
+                          </div>
+                          {record.weekInfo.newWeeks && record.weekInfo.newWeeks.length > 0 && (
+                            <div>
+                              <span className="text-green-700">新导入：</span>
+                              <span className="font-medium text-green-600">
+                                {record.weekInfo.newWeeks.length} 个周次
+                              </span>
+                            </div>
+                          )}
+                          {record.weekInfo.skippedWeeks && record.weekInfo.skippedWeeks.length > 0 && (
+                            <div>
+                              <span className="text-yellow-700">已跳过：</span>
+                              <span className="font-medium text-yellow-600">
+                                {record.weekInfo.skippedWeeks.length} 个周次
+                              </span>
+                            </div>
+                          )}
+                        </div>
+                        {record.weekInfo.newWeeks && record.weekInfo.newWeeks.length > 0 && (
+                          <div className="mt-2 text-xs text-slate-600">
+                            <span className="text-slate-500">导入周次：</span>
+                            {record.weekInfo.newWeeks
+                              .map(w => `第${w}周`)
+                              .join('、')}
+                          </div>
+                        )}
+                      </div>
+                    )}
+
                     {record.error && (
                       <div className="mt-2 p-2 bg-red-50 border border-red-200 rounded text-sm text-red-700">
                         <span className="font-medium">错误信息：</span>

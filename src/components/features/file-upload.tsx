@@ -11,6 +11,7 @@ import { useFileUpload } from '@/hooks/use-file-upload'
 import { Progress } from '@/components/ui/progress'
 import { useToast } from '@/hooks/use-toast'
 import { cn } from '@/lib/utils'
+import { safeMinMax } from '@/lib/utils/array-utils'
 import { UploadResultsDetail } from './upload-results-detail'
 import { useAppStore } from '@/store/use-app-store'
 
@@ -66,11 +67,15 @@ export function FileUpload() {
     const weeks = Array.from(new Set(rawData.map(r => r.week_number))).sort((a, b) => a - b)
     const years = Array.from(new Set(rawData.map(r => r.policy_start_year))).sort((a, b) => a - b)
 
+    const { min: minWeek, max: maxWeek } = weeks.length > 0
+      ? safeMinMax(weeks)
+      : { min: 0, max: 0 }
+
     return {
       totalRecords: rawData.length,
       weeks,
       years,
-      weekRange: weeks.length > 0 ? `${Math.min(...weeks)}-${Math.max(...weeks)}周` : '',
+      weekRange: weeks.length > 0 ? `${minWeek}-${maxWeek}周` : '',
     }
   }, [rawData])
 

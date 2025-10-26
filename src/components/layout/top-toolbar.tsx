@@ -4,55 +4,42 @@ import { DataViewSelector } from '@/components/filters/data-view-selector'
 import { CompactTimeFilter } from '@/components/filters/compact-time-filter'
 import { CompactOrganizationFilter } from '@/components/filters/compact-organization-filter'
 import { TimeProgressIndicator } from '@/components/features/time-progress-indicator'
+import type { AnalysisTabValue } from '@/components/layout/analysis-tabs'
+
+type WeekSelectionMode = 'single-only' | 'flexible'
 
 interface TopToolbarProps {
   rawCount: number
+  activeTab: AnalysisTabValue
 }
 
-export function TopToolbar({ rawCount }: TopToolbarProps) {
+function resolveWeekSelectionMode(tab: AnalysisTabValue): WeekSelectionMode {
+  if (tab === 'trend' || tab === 'multichart') {
+    return 'flexible'
+  }
+  return 'single-only'
+}
+
+export function TopToolbar({ rawCount, activeTab }: TopToolbarProps) {
+  const weekSelectionMode = resolveWeekSelectionMode(activeTab)
+
   return (
-    <div className="space-y-3">
-      {/* 数据统计 */}
-      <div className="flex items-center gap-4">
-        <p className="text-sm text-slate-600">
-          已加载{' '}
-          <span className="font-semibold text-blue-600">
-            {rawCount.toLocaleString()}
-          </span>{' '}
-          条数据记录
-        </p>
-      </div>
-
-      {/* 快速视图切换与时间进度一体化区域 */}
-      <div className="p-4 bg-white rounded-xl border border-slate-200 shadow-sm">
-        <div className="space-y-3">
-          {/* 第一行：周序号和时间进度 */}
-          <div className="flex items-center gap-4">
-            <div className="flex items-center gap-2">
-              <span className="text-xs font-medium text-slate-500">周序号:</span>
-              <CompactTimeFilter />
-            </div>
-
-            <div className="w-px h-6 bg-slate-200" />
-
-            <div className="flex-1">
-              <TimeProgressIndicator className="border-0 bg-transparent px-0 py-0" />
-            </div>
+    <div className="bg-white border-b border-slate-200">
+      <div className="px-4 sm:px-6 py-3 sm:py-4">
+        {/* 主控制区域 - 响应式布局 */}
+        {/* 桌面端：单行四列布局 */}
+        {/* 移动端：两行布局 */}
+        <div className="flex flex-col lg:flex-row lg:items-center gap-3">
+          {/* 第一组：周数选择器 + 数据视图选择器（桌面端左侧，移动端第一行） */}
+          <div className="flex items-center gap-3 flex-shrink-0">
+            <CompactTimeFilter mode={weekSelectionMode} />
+            <DataViewSelector />
           </div>
 
-          {/* 第二行：数据类型和机构筛选 */}
-          <div className="flex items-center gap-6 pt-2 border-t border-slate-100">
-            <div className="flex items-center gap-2">
-              <span className="text-xs font-medium text-slate-500">数据类型:</span>
-              <DataViewSelector />
-            </div>
-
-            <div className="w-px h-6 bg-slate-200" />
-
-            <div className="flex items-center gap-2">
-              <span className="text-xs font-medium text-slate-500">机构:</span>
-              <CompactOrganizationFilter />
-            </div>
+          {/* 第二组：机构选择器 + 时间进度（桌面端右侧，移动端第二行） */}
+          <div className="flex items-center gap-3 flex-wrap lg:flex-nowrap">
+            <CompactOrganizationFilter />
+            <TimeProgressIndicator compact />
           </div>
         </div>
       </div>

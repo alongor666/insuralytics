@@ -5,9 +5,11 @@ import { FileUpload } from '@/components/features/file-upload'
 import { FullKPIDashboard } from '@/components/features/full-kpi-dashboard'
 import { TimeProgressIndicator } from '@/components/features/time-progress-indicator'
 import { TrendChart } from '@/components/features/trend-chart'
+import { WeeklyOperationalTrend } from '@/components/features/weekly-operational-trend'
 import { StructureBarChart } from '@/components/features/structure-bar-chart'
 import { DistributionPieChart } from '@/components/features/distribution-pie-chart'
 import { ComparisonAnalysisPanel } from '@/components/features/comparison-analysis'
+import { MultiDimensionRadar } from '@/components/features/multi-dimension-radar'
 // 移除页面内直接使用的导出组件，改由 TopToolbar 使用
 // import { DataExport } from '@/components/features/data-export'
 import { CustomerSegmentationBubble } from '@/components/features/customer-segmentation-bubble'
@@ -47,7 +49,6 @@ import {
   AnalysisTabs,
   type AnalysisTabValue,
 } from '@/components/layout/analysis-tabs'
-import { ForecastPanel } from '@/components/features/forecast-panel'
 import { PredictionManagerPanel } from '@/components/features/prediction-manager'
 import { DataManagementPanel } from '@/components/features/data-management-panel'
 import { FilterManagementPanel } from '@/components/features/filter-management-panel'
@@ -55,7 +56,7 @@ import { FilterManagementPanel } from '@/components/features/filter-management-p
 export default function HomePage() {
   // 使用新架构的 Hooks
   const { rawData } = useInsuranceData()
-  const { setViewMode, resetFilters } = useFiltering()
+  const { setViewMode, viewMode } = useFiltering()
   const kpiData = useKPI()
   const { premiumTargets } = useKPICalculation()
   const premiumTargetsOverall = premiumTargets?.overall
@@ -81,7 +82,6 @@ export default function HomePage() {
     'trend',
     'thematic',
     'multichart',
-    'forecast',
     'prediction',
     'targets',
   ]
@@ -134,7 +134,11 @@ export default function HomePage() {
     }
 
     setActiveTab(tab)
-    setViewMode(tab === 'trend' || tab === 'forecast' ? 'trend' : 'single')
+    if (tab === 'trend' || tab === 'multichart') {
+      // 趋势与多维图表支持单选/多选，不强制切换模式
+    } else if (viewMode !== 'single') {
+      setViewMode('single')
+    }
 
     if (tab === 'kpi') {
       router.replace('/', { scroll: false })
@@ -178,7 +182,7 @@ export default function HomePage() {
           {/* 顶部工具栏（已整合时间进度） - 放置在统一导航之下，数据管理页面不显示 */}
           {hasData && activeTab !== 'data-management' && (
             <div className="mb-4">
-              <TopToolbar rawCount={rawData.length} />
+              <TopToolbar rawCount={rawData.length} activeTab={activeTab} />
             </div>
           )}
         </div>
@@ -219,10 +223,14 @@ export default function HomePage() {
             )}
 
             {/* 多周趋势分析 */}
-            {activeTab === 'trend' && <TrendChart />}
-
-            {/* 预测分析 */}
-            {activeTab === 'forecast' && <ForecastPanel />}
+            {activeTab === 'trend' && (
+              <div className="space-y-6">
+                {/* 新版周度经营趋势 */}
+                <WeeklyOperationalTrend />
+                {/* 原版趋势图表（保留作为备份） */}
+                {/* <TrendChart /> */}
+              </div>
+            )}
 
             {/* 预测管理 */}
             {activeTab === 'prediction' && <PredictionManagerPanel />}
@@ -243,6 +251,11 @@ export default function HomePage() {
             {/* 多维图表展示 */}
             {activeTab === 'multichart' && (
               <div className="space-y-8">
+                <MultiDimensionRadar
+                  currentKpi={currentKpi || kpiData}
+                  compareKpi={compareKpi}
+                  compareWeekNumber={previousWeekNumber}
+                />
                 <StructureBarChart />
                 <DistributionPieChart />
                 <ComparisonAnalysisPanel />

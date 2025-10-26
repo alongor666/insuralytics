@@ -16,6 +16,7 @@
 import { kpiEngine } from '@/lib/calculations/kpi-engine'
 import type { InsuranceRecord, KPIResult, FilterState } from '@/types/insurance'
 import { DataService } from './DataService'
+import { safeMax } from '@/lib/utils/array-utils'
 
 /**
  * KPI 计算选项
@@ -124,7 +125,7 @@ export class KPIService {
         const kpi = this.calculate(weekData, {
           currentWeekNumber: week,
           year: filters.years && filters.years.length > 0
-            ? Math.max(...filters.years)
+            ? safeMax(filters.years)
             : new Date().getFullYear(),
         })
 

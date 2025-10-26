@@ -3,6 +3,7 @@
 import { RotateCcw, Filter } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { useAppStore } from '@/store/use-app-store'
+import { useFilterStore } from '@/store/domains/filterStore'
 import { ProductFilter } from './product-filter'
 import { CustomerFilter } from './customer-filter'
 import { ChannelFilter } from './channel-filter'
@@ -13,8 +14,15 @@ import {
 } from '@/components/filters/filter-feedback'
 
 export function FilterPanel() {
-  const filters = useAppStore(state => state.filters)
-  const resetFilters = useAppStore(state => state.resetFilters)
+  const filters = useFilterStore(state => state.filters)
+  const resetFilters = useFilterStore(state => state.resetFilters)
+  const resetAppFilters = useAppStore(state => state.resetFilters)
+
+  // 同步重置两个store的筛选器
+  const handleResetFilters = () => {
+    resetFilters()
+    resetAppFilters()
+  }
 
   // 检查是否有任何活动的业务维度筛选器（不包括全局筛选器）
   const hasActiveFilters =
@@ -50,7 +58,7 @@ export function FilterPanel() {
           <Button
             variant="outline"
             size="lg"
-            onClick={resetFilters}
+            onClick={handleResetFilters}
             className="gap-2 rounded-xl border-2 font-semibold"
           >
             <RotateCcw className="h-4 w-4" /> 重置全部

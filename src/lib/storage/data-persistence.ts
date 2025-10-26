@@ -5,6 +5,18 @@
 
 import type { InsuranceRecord } from '@/types/insurance'
 import type { FileUploadResult, BatchUploadResult } from '@/hooks/use-file-upload'
+import { safeMin, safeMax } from '@/lib/utils/array-utils'
+
+/**
+ * 周次信息
+ */
+export interface WeekInfo {
+  weekNumber: number              // 周次号
+  year: number                    // 年份
+  recordCount: number             // 该周记录数
+  isConflict: boolean            // 是否与已有数据冲突
+  source: 'existing' | 'new'     // 数据来源
+}
 
 /**
  * 上传历史记录
@@ -19,12 +31,21 @@ export interface UploadHistoryRecord {
     recordCount: number
     validRecords: number
     invalidRecords: number
+    weekRange?: string            // 周次范围，例如 "2025年第11-12周"
+    newWeekCount?: number         // 新导入的周次数
+    skippedWeekCount?: number     // 跳过的周次数
   }[]
   totalRecords: number
   validRecords: number
   invalidRecords: number
   status: 'success' | 'partial' | 'failed'
   error?: string
+  weekInfo?: {                    // 周次统计信息
+    totalWeeks: number            // 总周次数
+    newWeeks: number[]           // 新导入的周次号列表
+    skippedWeeks: number[]       // 跳过的周次号列表
+    yearRange: number[]          // 年份范围
+  }
 }
 
 /**
@@ -269,5 +290,140 @@ export function getDataStats(): {
     totalRecords: storageInfo?.totalRecords || 0,
     lastUpdated: storageInfo?.lastUpdated || null,
     uploadCount: history.length,
+  }
+}
+
+/**
+ * 从记录中提取周次信息
+ */
+export function extractWeeksFromRecords(records: InsuranceRecord[]): WeekInfo[] {
+  const weekMap = new Map<string, WeekInfo>()
+
+  records.forEach(record => {
+    const key = `${record.policy_start_year}-${record.week_number}`
+
+    if (!weekMap.has(key)) {
+      weekMap.set(key, {
+        weekNumber: record.week_number,
+        year: record.policy_start_year,
+        recordCount: 0,
+        isConflict: false,
+        source: 'new'
+      })
+    }
+
+    const weekInfo = weekMap.get(key)!
+    weekInfo.recordCount++
+  })
+
+  return Array.from(weekMap.values()).sort((a, b) => {
+    if (a.year !== b.year) return a.year - b.year
+    return a.weekNumber - b.weekNumber
+  })
+}
+
+/**
+ * 获取已存在的周次集合
+ */
+export function getExistingWeeks(existingData: InsuranceRecord[]): Set<string> {
+  const weeks = new Set<string>()
+
+  existingData.forEach(record => {
+    const key = `${record.policy_start_year}-${record.week_number}`
+    weeks.add(key)
+  })
+
+  return weeks
+}
+
+/**
+ * 分析周次冲突
+ * @param detectedWeeks 待导入的周次
+ * @param existingData 已有数据
+ * @returns 新周次和冲突周次
+ */
+export function analyzeWeekConflicts(
+  detectedWeeks: WeekInfo[],
+  existingData: InsuranceRecord[]
+): { newWeeks: WeekInfo[], conflictWeeks: WeekInfo[] } {
+  const existingWeeks = getExistingWeeks(existingData)
+
+  const newWeeks: WeekInfo[] = []
+  const conflictWeeks: WeekInfo[] = []
+
+  detectedWeeks.forEach(week => {
+    const key = `${week.year}-${week.weekNumber}`
+
+    if (existingWeeks.has(key)) {
+      conflictWeeks.push({ ...week, isConflict: true, source: 'existing' })
+    } else {
+      newWeeks.push({ ...week, isConflict: false, source: 'new' })
+    }
+  })
+
+  return { newWeeks, conflictWeeks }
+}
+
+/**
+ * 按周次过滤记录（只保留新周次的数据）
+ * @param records 所有记录
+ * @param newWeeks 允许导入的新周次列表
+ * @returns 过滤后的记录
+ */
+export function filterRecordsByNewWeeks(
+  records: InsuranceRecord[],
+  newWeeks: WeekInfo[]
+): InsuranceRecord[] {
+  const allowedWeeks = new Set<string>()
+  newWeeks.forEach(week => {
+    const key = `${week.year}-${week.weekNumber}`
+    allowedWeeks.add(key)
+  })
+
+  return records.filter(record => {
+    const key = `${record.policy_start_year}-${record.week_number}`
+    return allowedWeeks.has(key)
+  })
+}
+
+/**
+ * 格式化周次范围为字符串
+ * @param weeks 周次列表
+ * @returns 格式化的字符串，例如 "2025年第11-12周"
+ */
+export function formatWeekRange(weeks: WeekInfo[]): string {
+  if (weeks.length === 0) return ''
+
+  const sortedWeeks = [...weeks].sort((a, b) => {
+    if (a.year !== b.year) return a.year - b.year
+    return a.weekNumber - b.weekNumber
+  })
+
+  const years = Array.from(new Set(sortedWeeks.map(w => w.year)))
+
+  if (years.length === 1) {
+    const weekNumbers = sortedWeeks.map(w => w.weekNumber)
+    const minWeek = safeMin(weekNumbers)
+    const maxWeek = safeMax(weekNumbers)
+
+    if (minWeek === maxWeek) {
+      return `${years[0]}年第${minWeek}周`
+    } else {
+      return `${years[0]}年第${minWeek}-${maxWeek}周`
+    }
+  } else {
+    // 多年份的情况
+    return years.map(year => {
+      const yearWeeks = sortedWeeks.filter(w => w.year === year)
+      const weekNumbers = yearWeeks.map(w => w.weekNumber)
+      const minWeek = safeMin(weekNumbers)
+      const maxWeek = safeMax(weekNumbers)
+
+      if (minWeek === maxWeek) {
+        return `${year}年第${minWeek}周`
+      } else {
+        return `${year}年第${minWeek}-${maxWeek}周`
+      }
+    }).join(', ')
   }
 }

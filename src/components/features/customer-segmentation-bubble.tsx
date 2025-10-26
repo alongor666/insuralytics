@@ -170,7 +170,7 @@ export function CustomerSegmentationBubble({ className }: Props) {
   }, [bubbleData])
 
   // 自定义 Tooltip
-  const CustomTooltip = ({ active, payload }: TooltipProps<number, string>) => {
+  const CustomTooltip = ({ active, payload }: any) => {
     if (!active || !payload?.length) return null
 
     const data = payload[0].payload as BubbleDataPoint

@@ -6,6 +6,7 @@ import { useFilteredData } from '@/hooks/use-filtered-data'
 import { usePremiumDimensionAnalysis } from '@/hooks/use-premium-dimension-analysis'
 import { useLossDimensionAnalysis } from '@/hooks/use-loss-dimension-analysis'
 import { kpiEngine } from '@/lib/calculations/kpi-engine'
+import { safeMax } from '@/lib/utils/array-utils'
 import { Card } from '@/components/ui/card'
 import {
   Select,
@@ -87,7 +88,7 @@ export function PredictionManagerPanel() {
   const latestWeek: number = useMemo(() => {
     if (filters.singleModeWeek) return filters.singleModeWeek
     if (filters.trendModeWeeks && filters.trendModeWeeks.length > 0) {
-      return Math.max(...filters.trendModeWeeks)
+      return safeMax(filters.trendModeWeeks)
     }
     const maxWeek = filteredData.reduce(
       (acc, r) => Math.max(acc, r.week_number),

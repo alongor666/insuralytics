@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { ChevronDown, ChevronUp, Filter } from 'lucide-react'
 import { MultiSelectFilter } from './multi-select-filter'
 import { useAppStore } from '@/store/use-app-store'
+import { useFilterStore } from '@/store/domains/filterStore'
 import { filterRecordsWithExclusions } from '@/store/use-app-store'
 import { cn, normalizeChineseText } from '@/lib/utils'
 import { CANONICAL_TERMINAL_SOURCES } from '@/constants/dimensions'
@@ -16,8 +17,15 @@ export function MoreFiltersPanel() {
   const [isExpanded, setIsExpanded] = useState(false)
 
   const rawData = useAppStore(state => state.rawData)
-  const filters = useAppStore(state => state.filters)
-  const updateFilters = useAppStore(state => state.updateFilters)
+  const filters = useFilterStore(state => state.filters)
+  const updateFilters = useFilterStore(state => state.updateFilters)
+  const updateAppFilters = useAppStore(state => state.updateFilters)
+
+  // 同步更新两个store的筛选器
+  const handleUpdateFilters = (newFilters: any) => {
+    updateFilters(newFilters)
+    updateAppFilters(newFilters)
+  }
 
   // 切换展开状态
   const toggleExpanded = () => {
@@ -95,7 +103,7 @@ export function MoreFiltersPanel() {
                     <button
                       key={String(option.value)}
                       onClick={() =>
-                        updateFilters({ isNewEnergy: option.value })
+                        handleUpdateFilters({ isNewEnergy: option.value })
                       }
                       className={cn(
                         'flex-1 px-4 py-2.5 text-sm font-medium rounded-xl transition-all duration-200',
@@ -121,7 +129,7 @@ export function MoreFiltersPanel() {
                 options={getTerminalSourceOptions()}
                 selectedValues={filters.terminalSources}
                 onChange={values =>
-                  updateFilters({
+                  handleUpdateFilters({
                     terminalSources: values.map(normalizeChineseText),
                   })
                 }
