@@ -1,29 +1,48 @@
 'use client'
 
-import { Calendar, X } from 'lucide-react'
+import { Calendar, X, ToggleLeft, ToggleRight } from 'lucide-react'
 import { useState, useRef, useEffect } from 'react'
 import { useAppStore } from '@/store/use-app-store'
 import { filterRecordsWithExclusions } from '@/store/use-app-store'
 import { cn } from '@/lib/utils'
+import { useFiltering } from '@/hooks/domains/useFiltering'
+
+interface CompactTimeFilterProps {
+  mode: 'single-only' | 'flexible'
+}
 
 /**
  * 紧凑版时间筛选器（用于全局筛选区）
  * 支持年度和周序号的弹出式选择
  */
-export function CompactTimeFilter() {
+export function CompactTimeFilter({ mode }: CompactTimeFilterProps) {
   const [isOpen, setIsOpen] = useState(false)
   const containerRef = useRef<HTMLDivElement>(null)
 
-  const filters = useAppStore(state => state.filters)
-  const updateFilters = useAppStore(state => state.updateFilters)
+  const { filters, updateFilters, switchViewMode } = useFiltering()
   const rawData = useAppStore(state => state.rawData)
 
-  const isSingleMode = filters.viewMode === 'single'
+  // 切换单选/多选模式
+  const handleToggleMultiSelect = () => {
+    if (mode !== 'flexible') return
+    const nextMode = filters.viewMode === 'single' ? 'trend' : 'single'
+    switchViewMode(nextMode)
+  }
+
+  const isFlexibleMode = mode === 'flexible'
+  const isSingleMode = !isFlexibleMode || filters.viewMode === 'single'
   const selectedWeeks = isSingleMode
     ? filters.singleModeWeek != null
       ? [filters.singleModeWeek]
       : []
     : filters.trendModeWeeks
+
+  // 单选模式页面强制保持单周模式
+  useEffect(() => {
+    if (!isFlexibleMode && filters.viewMode !== 'single') {
+      switchViewMode('single')
+    }
+  }, [isFlexibleMode, filters.viewMode, switchViewMode])
 
   // 联动：根据其他筛选条件，分别计算年度与周的可选项
   const recordsForYears = filterRecordsWithExclusions(rawData, filters, [
@@ -140,7 +159,8 @@ export function CompactTimeFilter() {
 
   const hasSelection = filters.years.length > 0 || selectedWeeks.length > 0
   const showYearBulkActions = availableYears.length > 3
-  const showWeekBulkActions = !isSingleMode && availableWeeks.length > 3
+  const showWeekBulkActions =
+    isFlexibleMode && !isSingleMode && availableWeeks.length > 3
 
   // 生成标签文本
   const getLabel = () => {
@@ -216,6 +236,31 @@ export function CompactTimeFilter() {
 
           {/* 内容区 */}
           <div className="p-3 space-y-4 max-h-96 overflow-y-auto">
+            {/* 周序号选择模式切换 */}
+            {isFlexibleMode && (
+              <div className="flex items-center justify-between p-2 bg-slate-50 rounded-md">
+                <span className="text-xs font-medium text-slate-700">
+                  周序号选择模式
+                </span>
+                <button
+                  onClick={handleToggleMultiSelect}
+                  className="flex items-center gap-2 text-xs text-blue-600 hover:text-blue-700 transition-colors"
+                >
+                  {isSingleMode ? (
+                    <>
+                      <ToggleLeft className="w-4 h-4" />
+                      <span>单选模式</span>
+                    </>
+                  ) : (
+                    <>
+                      <ToggleRight className="w-4 h-4" />
+                      <span>多选模式</span>
+                    </>
+                  )}
+                </button>
+              </div>
+            )}
+
             {/* 年度选择 */}
             <div>
               <label className="text-xs text-slate-600 mb-2 block">
@@ -268,6 +313,11 @@ export function CompactTimeFilter() {
                 <span className="text-slate-400">
                   ({availableWeeks.length}周可选)
                 </span>
+                {isFlexibleMode && !isSingleMode && (
+                  <span className="ml-2 text-xs bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full">
+                    多选模式
+                  </span>
+                )}
               </label>
               {showWeekBulkActions && (
                 <div className="mb-2 flex flex-wrap gap-2">
@@ -307,6 +357,11 @@ export function CompactTimeFilter() {
                   </button>
                 ))}
               </div>
+              {isSingleMode && (
+                <p className="text-xs text-slate-500 mt-2">
+                  单选模式：点击周序号进行选择，再次点击取消选择
+                </p>
+              )}
             </div>
           </div>
 
@@ -326,6 +381,7 @@ export function CompactTimeFilter() {
                 {selectedWeeks.length > 0 && (
                   <span className="font-medium text-slate-700">
                     {selectedWeeks.length}周
+                    {!isSingleMode && selectedWeeks.length > 1 && ' (多选)'}
                   </span>
                 )}
               </span>

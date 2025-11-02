@@ -61,6 +61,7 @@ export function ChannelFilter() {
               终端来源
             </label>
             <MultiSelectFilter
+              id="channel-filter-terminal-source"
               options={availableTerminalSources}
               selectedValues={filters.terminalSources}
               onChange={handleTerminalSourceChange}

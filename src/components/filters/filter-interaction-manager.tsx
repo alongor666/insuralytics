@@ -136,27 +136,27 @@ export function FilterInteractionManager() {
         updateFilters(updates)
       }
     } else if (filters.viewMode === 'trend') {
+      const relevantWeeksSet = new Set<number>()
+      rawData.forEach(record => {
+        if (
+          filters.years.length === 0 ||
+          filters.years.includes(record.policy_start_year)
+        ) {
+          relevantWeeksSet.add(record.week_number)
+        }
+      })
+      const sortedWeeks = Array.from(relevantWeeksSet).sort((a, b) => a - b)
+
+      if (sortedWeeks.length === 0) {
+        return
+      }
+
       let nextTrendWeeks = filters.trendModeWeeks
+        .filter(week => sortedWeeks.includes(week))
+        .sort((a, b) => a - b)
 
       if (nextTrendWeeks.length === 0) {
-        nextTrendWeeks =
-          filters.weeks.length > 0
-            ? [...filters.weeks].sort((a, b) => a - b)
-            : []
-
-        if (nextTrendWeeks.length <= 1) {
-          const relevantWeeksSet = new Set<number>()
-          rawData.forEach(record => {
-            if (
-              filters.years.length === 0 ||
-              filters.years.includes(record.policy_start_year)
-            ) {
-              relevantWeeksSet.add(record.week_number)
-            }
-          })
-          const sortedWeeks = Array.from(relevantWeeksSet).sort((a, b) => a - b)
-          nextTrendWeeks = sortedWeeks.slice(-12)
-        }
+        nextTrendWeeks = [...sortedWeeks]
       }
 
       const updates: Partial<FilterState> = {}

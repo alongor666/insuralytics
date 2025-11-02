@@ -22,7 +22,6 @@ import {
   getContributionMarginBgColor,
 } from '@/utils/format'
 import type { KPIResult } from '@/types/insurance'
-import { useKPITrend } from '@/hooks/use-kpi-trend'
 
 export interface KPIDashboardProps {
   /**
@@ -46,17 +45,6 @@ export function KPIDashboard({
   isLoading = false,
   compareData,
 }: KPIDashboardProps) {
-  // 获取核心KPI的趋势数据（最近12周）
-  const lossRatioTrend = useKPITrend('loss_ratio', { weeks: 12 })
-  const contributionMarginRatioTrend = useKPITrend(
-    'contribution_margin_ratio',
-    {
-      weeks: 12,
-    }
-  )
-  const expenseRatioTrend = useKPITrend('expense_ratio', { weeks: 12 })
-  const maturityRatioTrend = useKPITrend('maturity_ratio', { weeks: 12 })
-
   // 如果正在加载，显示骨架屏
   if (isLoading) {
     return (
@@ -141,7 +129,6 @@ export function KPIDashboard({
           kpiKey="loss_ratio"
           numeratorValue={kpiData.reported_claim_payment * 10000}
           denominatorValue={kpiData.matured_premium * 10000}
-          trendData={lossRatioTrend}
         />
 
         {/* 2. 费用率 */}
@@ -167,7 +154,6 @@ export function KPIDashboard({
           kpiKey="expense_ratio"
           numeratorValue={kpiData.expense_amount * 10000}
           denominatorValue={kpiData.signed_premium * 10000}
-          trendData={expenseRatioTrend}
         />
 
         {/* 3. 满期边际贡献率 ⭐ 核心指标 */}
@@ -191,12 +177,11 @@ export function KPIDashboard({
                 )
               : null
           }
-          icon={<Target className="h-5 w-5" />}
-          large={false}
+          large={true}
+          icon={<Target className="h-6 w-6" />}
           kpiKey="contribution_margin_ratio"
           numeratorValue={kpiData.contribution_margin_amount * 10000}
           denominatorValue={kpiData.matured_premium * 10000}
-          trendData={contributionMarginRatioTrend}
         />
 
         {/* 4. 保费进度 */}
@@ -251,7 +236,6 @@ export function KPIDashboard({
           kpiKey="maturity_ratio"
           numeratorValue={kpiData.matured_premium * 10000}
           denominatorValue={kpiData.signed_premium * 10000}
-          trendData={maturityRatioTrend}
         />
 
         {/* 6. 满期出险率 */}

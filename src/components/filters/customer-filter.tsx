@@ -6,28 +6,31 @@ import { useAppStore } from '@/store/use-app-store'
 import { filterRecordsWithExclusions } from '@/store/use-app-store'
 import type { VehicleInsuranceGrade } from '@/types/insurance'
 import { normalizeChineseText } from '@/lib/utils'
-import { CANONICAL_RENEWAL_STATUSES } from '@/constants/dimensions'
+import {
+  CANONICAL_RENEWAL_STATUSES,
+  CANONICAL_CUSTOMER_CATEGORIES,
+} from '@/constants/dimensions'
 
 export function CustomerFilter() {
   const filters = useAppStore(state => state.filters)
   const updateFilters = useAppStore(state => state.updateFilters)
   const rawData = useAppStore(state => state.rawData)
 
-  // 联动：根据其他筛选条件提取唯一的客户分类（规范化去重）
+  // 联动：根据其他筛选条件提取唯一的客户分类（仅显示CANONICAL集合中存在且数据中实际出现的值）
   const recordsForCustomerCategory = filterRecordsWithExclusions(
     rawData,
     filters,
     ['customerCategories']
   )
-  const availableCustomerCategories = Array.from(
-    new Set(
-      recordsForCustomerCategory.map(record =>
-        normalizeChineseText(record.customer_category_3)
-      )
-    )
+  const presentCustomerCategories = new Set<string>(
+    recordsForCustomerCategory
+      .map(record => normalizeChineseText(record.customer_category_3))
+      .filter((v): v is string => Boolean(v))
   )
-    .filter(cat => cat)
-    .sort()
+  const availableCustomerCategories = CANONICAL_CUSTOMER_CATEGORIES.filter(
+    cat => presentCustomerCategories.has(cat)
+  )
+    .sort((a, b) => a.localeCompare(b, 'zh-CN'))
     .map(cat => ({ label: cat, value: cat }))
 
   // 联动：根据其他筛选条件提取唯一的车险评级
@@ -105,6 +108,7 @@ export function CustomerFilter() {
               客户分类
             </label>
             <MultiSelectFilter
+              id="customer-filter-category"
               options={availableCustomerCategories}
               selectedValues={filters.customerCategories}
               onChange={handleCustomerCategoryChange}
@@ -118,6 +122,7 @@ export function CustomerFilter() {
               车险评级
             </label>
             <MultiSelectFilter
+              id="customer-filter-vehicle-grade"
               options={availableVehicleGrades}
               selectedValues={filters.vehicleGrades}
               onChange={handleVehicleGradeChange}
@@ -131,6 +136,7 @@ export function CustomerFilter() {
               新续转状态
             </label>
             <MultiSelectFilter
+              id="customer-filter-renewal-status"
               options={availableRenewalStatuses}
               selectedValues={filters.renewalStatuses}
               onChange={handleRenewalStatusChange}

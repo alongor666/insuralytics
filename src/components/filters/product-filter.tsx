@@ -8,6 +8,7 @@ import { normalizeChineseText } from '@/lib/utils'
 import {
   CANONICAL_INSURANCE_TYPES,
   CANONICAL_COVERAGE_TYPES,
+  CANONICAL_BUSINESS_TYPES,
 } from '@/constants/dimensions'
 
 export function ProductFilter() {
@@ -32,19 +33,19 @@ export function ProductFilter() {
     .sort((a, b) => a.localeCompare(b, 'zh-CN'))
     .map(type => ({ label: type, value: type }))
 
-  // 联动：根据其他筛选条件提取唯一的业务类型（规范化去重）
+  // 联动：根据其他筛选条件提取唯一的业务类型（仅显示CANONICAL集合中存在且数据中实际出现的值）
   const recordsForBusinessType = filterRecordsWithExclusions(rawData, filters, [
     'businessTypes',
   ])
-  const availableBusinessTypes = Array.from(
-    new Set(
-      recordsForBusinessType.map(record =>
-        normalizeChineseText(record.business_type_category)
-      )
-    )
+  const presentBusinessTypes = new Set<string>(
+    recordsForBusinessType
+      .map(record => normalizeChineseText(record.business_type_category))
+      .filter((v): v is string => Boolean(v))
   )
-    .filter(type => type)
-    .sort()
+  const availableBusinessTypes = CANONICAL_BUSINESS_TYPES.filter(type =>
+    presentBusinessTypes.has(type)
+  )
+    .sort((a, b) => a.localeCompare(b, 'zh-CN'))
     .map(type => ({ label: type, value: type }))
 
   // 联动：根据其他筛选条件提取唯一的险别组合
@@ -95,6 +96,7 @@ export function ProductFilter() {
               保险类型
             </label>
             <MultiSelectFilter
+              id="product-filter-insurance-type"
               options={availableInsuranceTypes}
               selectedValues={filters.insuranceTypes}
               onChange={handleInsuranceTypeChange}
@@ -108,6 +110,7 @@ export function ProductFilter() {
               业务类型
             </label>
             <MultiSelectFilter
+              id="product-filter-business-type"
               options={availableBusinessTypes}
               selectedValues={filters.businessTypes}
               onChange={handleBusinessTypeChange}
@@ -121,6 +124,7 @@ export function ProductFilter() {
               险别组合
             </label>
             <MultiSelectFilter
+              id="product-filter-coverage-type"
               options={availableCoverageTypes}
               selectedValues={filters.coverageTypes}
               onChange={handleCoverageTypeChange}

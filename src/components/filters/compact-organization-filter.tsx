@@ -101,25 +101,32 @@ export function CompactOrganizationFilter() {
   }
 
   return (
-    <div className="relative" ref={containerRef}>
-      {/* 触发按钮 */}
+    <div ref={containerRef} className="relative">
+      {/* 触发按钮 - 次级按钮样式，响应式设计 */}
       <button
         onClick={() => setIsOpen(!isOpen)}
         className={cn(
-          'inline-flex items-center gap-2 px-3 py-1.5 rounded-md text-sm font-medium transition-all border',
-          hasSelection
-            ? 'bg-blue-50 border-blue-200 text-blue-700 hover:bg-blue-100'
-            : 'bg-white border-slate-200 text-slate-600 hover:border-slate-300 hover:bg-slate-50'
+          'flex items-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-2 text-xs sm:text-sm font-medium rounded-lg transition-all duration-200',
+          'border border-slate-300 bg-slate-50 text-slate-600 hover:bg-slate-100 hover:border-slate-400',
+          'focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-1',
+          'shadow-sm hover:shadow-md',
+          isOpen && 'bg-slate-100 border-slate-400',
+          filters.organizations.length > 0 && 'border-blue-300 bg-blue-50 text-blue-700'
         )}
       >
-        <Building2 className="w-4 h-4" />
-        <span className="whitespace-nowrap max-w-[120px] truncate">
-          {getLabel()}
+        <Building2 className="h-3 w-3 sm:h-4 sm:w-4 flex-shrink-0" />
+        <span className="truncate max-w-[80px] sm:max-w-none">
+          {filters.organizations.length > 0
+            ? `已选 ${filters.organizations.length} 个`
+            : '选择机构'}
         </span>
-        {hasSelection && (
-          <span className="text-xs bg-blue-200 text-blue-800 px-1.5 py-0.5 rounded-full">
-            {filters.organizations.length}
-          </span>
+        {filters.organizations.length > 0 && (
+          <div className="w-1.5 h-1.5 sm:w-2 sm:h-2 bg-blue-500 rounded-full flex-shrink-0" />
+        )}
+        {filters.organizations.length > 0 && (
+          <div className="flex items-center gap-1 ml-1">
+            <div className="h-1 w-1 rounded-full bg-blue-500" />
+          </div>
         )}
       </button>
 

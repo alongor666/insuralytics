@@ -9,8 +9,6 @@ import {
   TooltipTrigger,
 } from '@/components/ui/tooltip'
 import { getKPIFormula } from '@/lib/calculations/kpi-formulas'
-import { Sparkline } from '@/components/ui/sparkline'
-import { tailwindToHex } from '@/utils/color-converter'
 
 export interface KPICardProps {
   /**
@@ -87,17 +85,6 @@ export interface KPICardProps {
    * 分母值（用于计算详情）
    */
   denominatorValue?: number | null
-
-  /**
-   * 趋势数据（用于显示sparkline）
-   * null值表示该数据点缺失，将在图表中显示为断点
-   */
-  trendData?: (number | null)[]
-
-  /**
-   * 是否显示趋势图
-   */
-  showTrend?: boolean
 }
 
 export function KPICard({
@@ -116,8 +103,6 @@ export function KPICard({
   kpiKey,
   numeratorValue,
   denominatorValue,
-  trendData,
-  showTrend = true,
 }: KPICardProps) {
   // 格式化主值
   const formattedValue = formatter
@@ -291,22 +276,6 @@ export function KPICard({
               {formattedCompareValue}
             </span>
             <span className="text-xs text-slate-500">vs 上期</span>
-          </div>
-        )}
-
-        {/* 微型趋势图 */}
-        {showTrend && trendData && trendData.length > 0 && (
-          <div className="mt-3 opacity-0 transition-opacity duration-300 group-hover:opacity-100">
-            <Sparkline
-              data={trendData}
-              color={tailwindToHex(valueColor)}
-              height={32}
-              width="100%"
-              strokeWidth={1.5}
-            />
-            <p className="mt-1 text-xs text-slate-400">
-              最近{trendData.length}周趋势
-            </p>
           </div>
         )}
       </div>

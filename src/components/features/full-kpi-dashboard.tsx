@@ -1,7 +1,7 @@
 /**
  * 完整版KPI看板 - 4x4网格布局
  * 指标名称和顺序与紧凑版保持一致
- * 集成：微型趋势图（9周）、公式详情Tooltip、智能环比
+ * 集成：公式详情Tooltip、智能环比
  */
 'use client'
 
@@ -13,8 +13,6 @@ import {
   getContributionMarginColor,
 } from '@/utils/format'
 import type { KPIResult } from '@/types/insurance'
-import { useKPITrend } from '@/hooks/use-kpi-trend'
-import { Sparkline } from '@/components/ui/sparkline'
 import {
   Tooltip,
   TooltipContent,
@@ -54,7 +52,6 @@ interface KPIConfig {
   getColor: (val: number | null) => string
   decimals?: number // 用于计算增量的小数位数
   hasFormula?: boolean // 是否显示公式详情
-  showTrend?: boolean // 是否显示趋势图
 }
 
 export function FullKPIDashboard({
@@ -73,7 +70,6 @@ export function FullKPIDashboard({
       getColor: val => getContributionMarginColor(val),
       decimals: 2,
       hasFormula: true,
-      showTrend: true,
     },
     {
       key: 'premium_time_progress_achievement_rate',
@@ -88,7 +84,6 @@ export function FullKPIDashboard({
             : 'text-orange-600',
       decimals: 2,
       hasFormula: true,
-      showTrend: true,
     },
     {
       key: 'loss_ratio',
@@ -103,7 +98,6 @@ export function FullKPIDashboard({
             : 'text-green-600',
       decimals: 2,
       hasFormula: true,
-      showTrend: true,
     },
     {
       key: 'expense_ratio',
@@ -118,7 +112,6 @@ export function FullKPIDashboard({
             : 'text-green-600',
       decimals: 2,
       hasFormula: true,
-      showTrend: true,
     },
   ]
 
@@ -136,7 +129,6 @@ export function FullKPIDashboard({
         val !== null && val >= 0 ? 'text-green-600' : 'text-red-600',
       decimals: 0,
       hasFormula: true,
-      showTrend: true,
     },
     {
       key: 'signed_premium',
@@ -149,7 +141,6 @@ export function FullKPIDashboard({
       getColor: () => 'text-slate-700',
       decimals: 0,
       hasFormula: true,
-      showTrend: true,
     },
     {
       key: 'reported_claim_payment',
@@ -162,7 +153,6 @@ export function FullKPIDashboard({
       getColor: () => 'text-slate-700',
       decimals: 0,
       hasFormula: true,
-      showTrend: true,
     },
     {
       key: 'expense_amount',
@@ -175,7 +165,6 @@ export function FullKPIDashboard({
       getColor: () => 'text-slate-700',
       decimals: 0,
       hasFormula: true,
-      showTrend: true,
     },
   ]
 
@@ -194,7 +183,6 @@ export function FullKPIDashboard({
             : 'text-green-600',
       decimals: 2,
       hasFormula: true,
-      showTrend: true,
     },
     {
       key: 'maturity_ratio',
@@ -209,7 +197,6 @@ export function FullKPIDashboard({
             : 'text-orange-600',
       decimals: 2,
       hasFormula: true,
-      showTrend: true,
     },
     {
       key: 'matured_claim_ratio',
@@ -224,7 +211,6 @@ export function FullKPIDashboard({
             : 'text-green-600',
       decimals: 2,
       hasFormula: true,
-      showTrend: true,
     },
     {
       key: 'policy_count',
@@ -237,7 +223,6 @@ export function FullKPIDashboard({
       getColor: () => 'text-slate-700',
       decimals: 0,
       hasFormula: true,
-      showTrend: true,
     },
   ]
 
@@ -254,7 +239,6 @@ export function FullKPIDashboard({
       getColor: () => 'text-slate-700',
       decimals: 0,
       hasFormula: true,
-      showTrend: true,
     },
     {
       key: 'average_premium',
@@ -267,7 +251,6 @@ export function FullKPIDashboard({
       getColor: () => 'text-slate-700',
       decimals: 0,
       hasFormula: true,
-      showTrend: true,
     },
     {
       key: 'average_claim',
@@ -280,7 +263,6 @@ export function FullKPIDashboard({
       getColor: () => 'text-slate-700',
       decimals: 0,
       hasFormula: true,
-      showTrend: true,
     },
     {
       key: 'average_expense',
@@ -293,7 +275,6 @@ export function FullKPIDashboard({
       getColor: () => 'text-slate-700',
       decimals: 0,
       hasFormula: true,
-      showTrend: true,
     },
   ]
 
@@ -355,6 +336,60 @@ export function FullKPIDashboard({
       ? getKPIFormula(config.key as string)
       : undefined
 
+    // 获取分子分母值（用于显示计算详情）
+    const getNumeratorDenominator = () => {
+      const key = config.key as string
+      if (!kpiData) return { numerator: null, denominator: null }
+
+      // 根据不同的KPI类型返回对应的分子分母
+      switch (key) {
+        case 'contribution_margin_ratio':
+          return {
+            numerator: kpiData.contribution_margin_amount * 10000,
+            denominator: kpiData.matured_premium * 10000,
+          }
+        case 'loss_ratio':
+          return {
+            numerator: kpiData.reported_claim_payment * 10000,
+            denominator: kpiData.matured_premium * 10000,
+          }
+        case 'expense_ratio':
+          return {
+            numerator: kpiData.expense_amount * 10000,
+            denominator: kpiData.signed_premium * 10000,
+          }
+        case 'maturity_ratio':
+          return {
+            numerator: kpiData.matured_premium * 10000,
+            denominator: kpiData.signed_premium * 10000,
+          }
+        case 'matured_claim_ratio':
+          return {
+            numerator: kpiData.claim_case_count,
+            denominator: kpiData.policy_count,
+          }
+        case 'average_premium':
+          return {
+            numerator: kpiData.signed_premium * 10000,
+            denominator: kpiData.policy_count,
+          }
+        case 'average_claim':
+          return {
+            numerator: kpiData.reported_claim_payment * 10000,
+            denominator: kpiData.claim_case_count,
+          }
+        case 'average_expense':
+          return {
+            numerator: kpiData.expense_amount * 10000,
+            denominator: kpiData.policy_count,
+          }
+        default:
+          return { numerator: null, denominator: null }
+      }
+    }
+
+    const { numerator, denominator } = getNumeratorDenominator()
+
     return (
       <div
         key={config.key as string}
@@ -394,26 +429,77 @@ export function FullKPIDashboard({
                   </TooltipTrigger>
                   <TooltipContent
                     side="top"
-                    className="max-w-xs border border-slate-200 bg-white p-3 shadow-lg"
+                    className="max-w-sm border border-slate-200 bg-white p-4 shadow-lg"
                   >
-                    <div className="space-y-2">
+                    <div className="space-y-3">
+                      {/* 计算公式 */}
                       <div>
                         <p className="text-xs font-semibold text-slate-700">
-                          公式
+                          计算公式
                         </p>
-                        <p className="mt-1 font-mono text-xs text-blue-600">
+                        <p className="mt-1 font-mono text-sm text-blue-600">
                           {formulaDefinition.formula}
                         </p>
                       </div>
-                      <div>
-                        <p className="text-xs font-semibold text-slate-700">
-                          数值
-                        </p>
-                        <p className="mt-1 font-mono text-xs text-slate-600">
-                          {formattedValue}
-                          {config.unit && ` ${config.unit}`}
+
+                      {/* 计算详情（如果有分子分母） */}
+                      {formulaDefinition.numerator &&
+                        formulaDefinition.denominator && (
+                          <div className="space-y-1 border-t border-slate-100 pt-2">
+                            <div className="flex justify-between text-xs">
+                              <span className="text-slate-600">
+                                {formulaDefinition.numerator}
+                              </span>
+                              <span className="font-mono font-semibold text-slate-800">
+                                {numerator !== null && numerator !== undefined
+                                  ? numerator.toLocaleString('zh-CN', {
+                                      maximumFractionDigits: 2,
+                                    })
+                                  : '-'}
+                              </span>
+                            </div>
+                            <div className="flex justify-between text-xs">
+                              <span className="text-slate-600">
+                                {formulaDefinition.denominator}
+                              </span>
+                              <span className="font-mono font-semibold text-slate-800">
+                                {denominator !== null &&
+                                denominator !== undefined
+                                  ? denominator.toLocaleString('zh-CN', {
+                                      maximumFractionDigits: 2,
+                                    })
+                                  : '-'}
+                              </span>
+                            </div>
+                            <div className="mt-1 flex justify-between border-t border-slate-200 pt-1 text-xs">
+                              <span className="font-semibold text-slate-700">
+                                结果
+                              </span>
+                              <span className="font-mono font-bold text-blue-600">
+                                {formattedValue}
+                                {config.unit && ` ${config.unit}`}
+                              </span>
+                            </div>
+                          </div>
+                        )}
+
+                      {/* 业务含义 */}
+                      <div className="border-t border-slate-100 pt-2">
+                        <p className="text-xs text-slate-600">
+                          <span className="font-semibold">业务含义：</span>
+                          {formulaDefinition.businessMeaning}
                         </p>
                       </div>
+
+                      {/* 示例 */}
+                      {formulaDefinition.example && (
+                        <div className="border-t border-slate-100 pt-2">
+                          <p className="text-xs text-slate-500">
+                            <span className="font-semibold">示例：</span>
+                            {formulaDefinition.example}
+                          </p>
+                        </div>
+                      )}
                     </div>
                   </TooltipContent>
                 </Tooltip>
@@ -463,37 +549,7 @@ export function FullKPIDashboard({
               )}
             </div>
           )}
-
-          {/* 微型趋势图 - 使用wrapper组件获取数据 */}
-          {config.showTrend && (
-            <div className="pt-2">
-              <TrendWrapper configKey={config.key} />
-            </div>
-          )}
         </div>
-      </div>
-    )
-  }
-
-  // 趋势图包装组件（在组件内部调用Hook）
-  function TrendWrapper({ configKey }: { configKey: keyof KPIResult }) {
-    const trendData = useKPITrend(configKey, { weeks: 9 })
-
-    if (!trendData || trendData.length === 0) {
-      return null
-    }
-
-    return (
-      <div className="h-12">
-        <Sparkline
-          data={trendData}
-          width={200}
-          height={48}
-          color="#3b82f6"
-          fillColor="rgba(59, 130, 246, 0.1)"
-          strokeWidth={2}
-          connectNulls={false} // 不连接null值，显示断点
-        />
       </div>
     )
   }
@@ -511,8 +567,7 @@ export function FullKPIDashboard({
               >
                 <div className="mb-3 h-3 w-28 rounded bg-slate-200" />
                 <div className="mb-2 h-8 w-24 rounded bg-slate-200" />
-                <div className="mb-2 h-4 w-20 rounded bg-slate-200" />
-                <div className="h-12 rounded bg-slate-100" />
+                <div className="h-4 w-20 rounded bg-slate-200" />
               </div>
             ))}
           </div>

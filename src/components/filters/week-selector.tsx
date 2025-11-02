@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import { Check, ChevronDown, RotateCcw } from 'lucide-react'
 import { useAppStore } from '@/store/use-app-store'
+import { useFilterStore } from '@/store/domains/filterStore'
 import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
 import {
@@ -26,8 +27,17 @@ interface WeekSelectorProps {
  * 根据视图模式自动切换单选/多选模式
  */
 export function WeekSelector({ availableWeeks }: WeekSelectorProps) {
-  const { viewMode, filters, updateFilters } = useAppStore()
+  const { viewMode } = useAppStore()
+  const filters = useFilterStore(state => state.filters)
+  const updateFilters = useFilterStore(state => state.updateFilters)
+  const updateAppFilters = useAppStore(state => state.updateFilters)
   const [isOpen, setIsOpen] = useState(false)
+
+  // 同步更新两个store的筛选器
+  const handleUpdateFilters = (newFilters: any) => {
+    updateFilters(newFilters)
+    updateAppFilters(newFilters)
+  }
 
   const isSingleMode = viewMode === 'single'
   const selectedWeeks = isSingleMode
@@ -38,7 +48,7 @@ export function WeekSelector({ availableWeeks }: WeekSelectorProps) {
 
   // 单周模式：选择单个周
   const handleSingleWeekSelect = (week: number) => {
-    updateFilters({
+    handleUpdateFilters({
       singleModeWeek: week,
       weeks: [week],
     })
@@ -52,13 +62,13 @@ export function WeekSelector({ availableWeeks }: WeekSelectorProps) {
       ? filters.trendModeWeeks.filter(w => w !== week)
       : [...filters.trendModeWeeks, week].sort((a, b) => a - b)
     if (isSelected) {
-      updateFilters({
+      handleUpdateFilters({
         trendModeWeeks: nextWeeks,
         weeks: nextWeeks,
       })
       return
     }
-    updateFilters({
+    handleUpdateFilters({
       trendModeWeeks: nextWeeks,
       weeks: nextWeeks,
     })
@@ -67,14 +77,14 @@ export function WeekSelector({ availableWeeks }: WeekSelectorProps) {
   // 批量操作
   const handleSelectAll = () => {
     const allWeeks = availableWeeks.map(w => w.week)
-    updateFilters({
+    handleUpdateFilters({
       trendModeWeeks: allWeeks,
       weeks: allWeeks,
     })
   }
 
   const handleSelectNone = () => {
-    updateFilters({
+    handleUpdateFilters({
       trendModeWeeks: [],
       weeks: [],
     })
@@ -121,7 +131,7 @@ export function WeekSelector({ availableWeeks }: WeekSelectorProps) {
             variant="ghost"
             size="sm"
             onClick={() =>
-              updateFilters(
+              handleUpdateFilters(
                 isSingleMode
                   ? { singleModeWeek: null, weeks: [] }
                   : { trendModeWeeks: [], weeks: [] }

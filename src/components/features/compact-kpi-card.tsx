@@ -10,8 +10,6 @@ import {
   TooltipTrigger,
 } from '@/components/ui/tooltip'
 import { getKPIFormula } from '@/lib/calculations/kpi-formulas'
-import { Sparkline } from '@/components/ui/sparkline'
-import { tailwindToHex } from '@/utils/color-converter'
 
 export interface CompactKPICardProps {
   /**
@@ -75,11 +73,6 @@ export interface CompactKPICardProps {
   denominatorValue?: number | null
 
   /**
-   * 趋势数据（用于显示sparkline）
-   */
-  trendData?: number[]
-
-  /**
    * 是否为核心指标（突出显示）
    */
   isCore?: boolean
@@ -98,7 +91,6 @@ export function CompactKPICard({
   kpiKey,
   numeratorValue,
   denominatorValue,
-  trendData,
   isCore = false,
 }: CompactKPICardProps) {
   const [showDetail, setShowDetail] = useState(false)
@@ -247,19 +239,6 @@ export function CompactKPICard({
               <span className="text-xs text-slate-400">vs上期</span>
             </div>
           )}
-
-          {/* 微型趋势图（悬停显示） */}
-          {trendData && trendData.length > 0 && (
-            <div className="mt-2 opacity-0 transition-opacity duration-200 group-hover:opacity-100">
-              <Sparkline
-                data={trendData}
-                color={tailwindToHex(valueColor)}
-                height={24}
-                width="100%"
-                strokeWidth={1.5}
-              />
-            </div>
-          )}
         </div>
 
         {/* 展开图标 */}
@@ -374,24 +353,6 @@ export function CompactKPICard({
                   {formulaDefinition.businessMeaning}
                 </p>
               </div>
-
-              {/* 趋势图 */}
-              {trendData && trendData.length > 0 && (
-                <div>
-                  <p className="text-xs font-semibold text-slate-700 mb-2">
-                    最近{trendData.length}周趋势
-                  </p>
-                  <div className="rounded-lg border border-slate-200 bg-slate-50 p-4">
-                    <Sparkline
-                      data={trendData}
-                      color={tailwindToHex(valueColor)}
-                      height={60}
-                      width="100%"
-                      strokeWidth={2}
-                    />
-                  </div>
-                </div>
-              )}
 
               {/* 示例 */}
               {formulaDefinition.example && (

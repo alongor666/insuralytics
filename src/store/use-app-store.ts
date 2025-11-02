@@ -17,6 +17,17 @@ import type {
 } from '@/types/insurance'
 import { TARGET_DIMENSIONS } from '@/types/insurance'
 import { normalizeChineseText } from '@/lib/utils'
+import {
+  saveDataToStorage,
+  loadDataFromStorage,
+  clearStoredData,
+  getDataStats,
+  checkFileExists,
+  addUploadHistory,
+  getUploadHistory,
+} from '@/lib/storage/data-persistence'
+// 导入新架构的 Store 以实现数据同步
+import { useDataStore } from '@/store/domains/dataStore'
 
 const PREMIUM_TARGET_STORAGE_KEY = 'insurDashPremiumTargets'
 
@@ -173,10 +184,20 @@ interface AppState {
 
   // 数据操作
   setRawData: (data: InsuranceRecord[]) => void
+  appendRawData: (data: InsuranceRecord[]) => void // 新增：追加数据（支持多次上传）
   clearData: () => void
   setLoading: (loading: boolean) => void
   setError: (error: Error | null) => void
   setUploadProgress: (progress: number) => void
+
+  // 数据持久化操作
+  saveDataToPersistentStorage: () => Promise<void>
+  loadDataFromPersistentStorage: () => void
+  clearPersistentData: () => void
+  getStorageStats: () => ReturnType<typeof getDataStats>
+  checkFileForDuplicates: (file: File) => Promise<{ exists: boolean; uploadRecord?: any; fileInfo?: any }>
+  addToUploadHistory: (batchResult: any, files: File[]) => Promise<void>
+  getUploadHistoryRecords: () => any[]
 
   // 筛选操作（向后兼容）
   updateFilters: (filters: Partial<FilterState>) => void
@@ -250,9 +271,9 @@ export const useAppStore = create<AppState>()(
       // ============= 数据操作 =============
       setRawData: data =>
         set(
-          () => ({
+          state => {
             // 进入 Store 前做一遍中文文本规范化，避免后续对比出现乱码
-            rawData: data.map(r => ({
+            const normalizedData = data.map(r => ({
               ...r,
               customer_category_3: normalizeChineseText(r.customer_category_3),
               business_type_category: normalizeChineseText(
@@ -262,14 +283,123 @@ export const useAppStore = create<AppState>()(
                 r.third_level_organization
               ),
               terminal_source: normalizeChineseText(r.terminal_source),
-            })),
-            error: null,
-          }),
+            }))
+
+            // 同步数据到新架构的 DataStore（使用 setData 方法，不自动保存避免重复）
+            useDataStore.getState().setData(normalizedData, false).catch(err => {
+              console.error('[AppStore] 同步数据到 DataStore 失败:', err)
+            })
+
+            // 自动初始化筛选条件：设置最新周次为默认选中周次
+            const weekNumbers = Array.from(
+              new Set(normalizedData.map(r => r.week_number))
+            ).sort((a, b) => b - a) // 降序排列
+
+            const latestWeek = weekNumbers.length > 0 ? weekNumbers[0] : null
+
+            console.log(
+              `[AppStore] 数据已加载，可用周次: [${weekNumbers.join(', ')}]，自动选中最新周次: ${latestWeek}`
+            )
+
+            return {
+              rawData: normalizedData,
+              error: null,
+              // 自动初始化筛选器：选中最新周次
+              filters: {
+                ...state.filters,
+                singleModeWeek: latestWeek,
+                weeks: latestWeek ? [latestWeek] : [],
+              },
+            }
+          },
           false,
           'setRawData'
         ),
 
-      clearData: () =>
+      appendRawData: data =>
+        set(
+          state => {
+            // 规范化新数据
+            const normalizedNewData = data.map(r => ({
+              ...r,
+              customer_category_3: normalizeChineseText(r.customer_category_3),
+              business_type_category: normalizeChineseText(
+                r.business_type_category
+              ),
+              third_level_organization: normalizeChineseText(
+                r.third_level_organization
+              ),
+              terminal_source: normalizeChineseText(r.terminal_source),
+            }))
+
+            // 创建已有数据的唯一键集合（使用多个字段组合作为唯一标识）
+            // 使用：快照日期+周次+年份+机构+客户类型+险种+业务类型
+            const existingKeys = new Set(
+              state.rawData.map(
+                r =>
+                  `${r.snapshot_date}_${r.week_number}_${r.policy_start_year}_${r.third_level_organization}_${r.customer_category_3}_${r.insurance_type}_${r.business_type_category}`
+              )
+            )
+
+            // 过滤出新数据（去重）
+            const uniqueNewData = normalizedNewData.filter(
+              r =>
+                !existingKeys.has(
+                  `${r.snapshot_date}_${r.week_number}_${r.policy_start_year}_${r.third_level_organization}_${r.customer_category_3}_${r.insurance_type}_${r.business_type_category}`
+                )
+            )
+
+            console.log(
+              `[AppendData] 原有数据: ${state.rawData.length} 条, 新数据: ${data.length} 条, 去重后: ${uniqueNewData.length} 条`
+            )
+
+            const mergedData = [...state.rawData, ...uniqueNewData]
+
+            // 同步数据到新架构的 DataStore（追加模式，不自动保存避免重复）
+            useDataStore.getState().appendData(uniqueNewData, false).catch(err => {
+              console.error('[AppStore] 同步追加数据到 DataStore 失败:', err)
+            })
+
+            // 更新周次筛选：如果有新周次，自动选中最新周次
+            const weekNumbers = Array.from(
+              new Set(mergedData.map(r => r.week_number))
+            ).sort((a, b) => b - a) // 降序排列
+
+            const latestWeek = weekNumbers.length > 0 ? weekNumbers[0] : null
+
+            // 检查是否有新周次加入
+            const oldWeekNumbers = Array.from(
+              new Set(state.rawData.map(r => r.week_number))
+            )
+            const hasNewWeeks = weekNumbers.length > oldWeekNumbers.length
+
+            if (hasNewWeeks) {
+              console.log(
+                `[AppendData] 检测到新周次，可用周次: [${weekNumbers.join(', ')}]，自动选中最新周次: ${latestWeek}`
+              )
+            }
+
+            return {
+              rawData: mergedData,
+              error: null,
+              // 如果有新周次，自动更新筛选器
+              filters: hasNewWeeks
+                ? {
+                    ...state.filters,
+                    singleModeWeek: latestWeek,
+                    weeks: latestWeek ? [latestWeek] : [],
+                  }
+                : state.filters,
+            }
+          },
+          false,
+          'appendRawData'
+        ),
+
+      clearData: () => {
+        // 同步清除新架构的 DataStore
+        useDataStore.getState().clearData()
+
         set(
           {
             rawData: [],
@@ -278,7 +408,8 @@ export const useAppStore = create<AppState>()(
           },
           false,
           'clearData'
-        ),
+        )
+      },
 
       setLoading: loading =>
         set(
@@ -518,6 +649,61 @@ export const useAppStore = create<AppState>()(
           false,
           'setSelectedOrganizations'
         ),
+
+      // 数据持久化操作
+      saveDataToPersistentStorage: async () => {
+        const state = useAppStore.getState()
+        await saveDataToStorage(state.rawData)
+      },
+
+      loadDataFromPersistentStorage: () => {
+        const data = loadDataFromStorage()
+        if (data) {
+          set(
+            {
+              rawData: data.map(r => ({
+                ...r,
+                customer_category_3: normalizeChineseText(r.customer_category_3),
+                business_type_category: normalizeChineseText(
+                  r.business_type_category
+                ),
+                third_level_organization: normalizeChineseText(
+                  r.third_level_organization
+                ),
+                terminal_source: normalizeChineseText(r.terminal_source),
+              })),
+              error: null,
+            },
+            false,
+            'loadDataFromPersistentStorage'
+          )
+        }
+      },
+
+      clearPersistentData: () => {
+        clearStoredData()
+        set(
+          {
+            rawData: [],
+            computedKPIs: new Map(),
+            error: null,
+          },
+          false,
+          'clearPersistentData'
+        )
+      },
+
+      getStorageStats: () => getDataStats(),
+
+      checkFileForDuplicates: async (file: File) => {
+        return await checkFileExists(file)
+      },
+
+      addToUploadHistory: async (batchResult: any, files: File[]) => {
+        await addUploadHistory(batchResult, files)
+      },
+
+      getUploadHistoryRecords: () => getUploadHistory(),
     }),
     {
       name: 'insurance-analytics-store',
@@ -530,12 +716,36 @@ export const useAppStore = create<AppState>()(
  */
 export const useFilteredData = () => {
   const rawData = useAppStore(state => state.rawData)
-  const filters = useAppStore(state => state.filters)
+  // 使用细粒度选择器避免对象引用问题
+  const years = useAppStore(state => state.filters.years)
+  const weeks = useAppStore(state => state.filters.weeks)
+  const organizations = useAppStore(state => state.filters.organizations)
+  const insuranceTypes = useAppStore(state => state.filters.insuranceTypes)
+  const businessTypes = useAppStore(state => state.filters.businessTypes)
+  const coverageTypes = useAppStore(state => state.filters.coverageTypes)
+  const customerCategories = useAppStore(state => state.filters.customerCategories)
+  const vehicleGrades = useAppStore(state => state.filters.vehicleGrades)
+  const terminalSources = useAppStore(state => state.filters.terminalSources)
+  const isNewEnergy = useAppStore(state => state.filters.isNewEnergy)
+  const renewalStatuses = useAppStore(state => state.filters.renewalStatuses)
 
   // 应用筛选逻辑（memo 化，避免不必要重算）
   return useMemo(
     () =>
       rawData.filter(record => {
+        const filters = {
+          years,
+          weeks,
+          organizations,
+          insuranceTypes,
+          businessTypes,
+          coverageTypes,
+          customerCategories,
+          vehicleGrades,
+          terminalSources,
+          isNewEnergy,
+          renewalStatuses,
+        }
         // 时间筛选
         if (
           filters.years.length > 0 &&
@@ -631,7 +841,20 @@ export const useFilteredData = () => {
 
         return true
       }),
-    [rawData, filters]
+    [
+      rawData,
+      years,
+      weeks,
+      organizations,
+      insuranceTypes,
+      businessTypes,
+      coverageTypes,
+      customerCategories,
+      vehicleGrades,
+      terminalSources,
+      isNewEnergy,
+      renewalStatuses,
+    ]
   )
 }
 

@@ -56,3 +56,7 @@ next-env.d.ts
 !开发文档/03_logs/**/*.md
 !开发文档/archive/**/*.md
 !开发文档/**/_templates/**/*.md
+
+
+#Ignore vscode AI rules
+.github/instructions/codacy.instructions.md

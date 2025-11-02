@@ -27,6 +27,11 @@
   - `src/lib/schema/insurance.ts`: Zod 定义的数据验证 schema。
   - `开发文档/03_technical_design/data_architecture.md`: 数据架构、字段定义和CSV导入规范的详细文档。
 
+- **统一数据导入核心**:
+  - `src/lib/actions/importData.ts`: **[核心]** 新增的 Server Action，作为唯一的数据入口。它接收结构化数据，并内置了完整的验证与**去重逻辑**。
+  - `src/app/api/upload/route.ts`: 处理网络上传文件的 API，其职责被简化为仅解析文件并调用 `importDataAction`。
+  - `src/components/features/file-upload.tsx`: 增强此组件，使其支持本地文件解析，并直接调用 `importDataAction`，实现离线导入功能。
+
 - **核心业务逻辑**:
   - `src/app/api/kpi/route.ts`: 后端 KPI 计算的核心 API 端点。
   - `开发文档/03_technical_design/core_calculations.md`: 所有核心KPI的计算公式与业务逻辑。

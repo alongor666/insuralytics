@@ -402,8 +402,15 @@ export class KPIEngine {
 
   /**
    * 计算周增量 KPI
-   * @param currentWeekRecords 当前周的记录
-   * @param previousWeekRecords 前一周的记录
+   *
+   * 【重要】数据处理逻辑：
+   * - currentWeekRecords: 当前周的记录（CSV中是年初至今的累计数据）
+   * - previousWeekRecords: 上周的记录（CSV中是年初至上周的累计数据）
+   * - 增量计算：绝对值指标 = 当周累计 - 上周累计
+   * - 比率计算：赔付率、费用率等 = 基于当周累计数据计算（不是基于增量）
+   *
+   * @param currentWeekRecords 当前周的记录（累计数据）
+   * @param previousWeekRecords 前一周的记录（累计数据）
    * @param options 计算选项
    * @returns 周增量 KPI 结果
    */
@@ -443,7 +450,7 @@ export class KPIEngine {
         ? aggregateData(previousWeekRecords)
         : this.getEmptyAggregation()
 
-    // 计算增量聚合数据
+    // 计算增量聚合数据（用于绝对值指标：签单保费、件数等）
     const incrementAgg: BaseAggregation = {
       signed_premium_yuan:
         currentAgg.signed_premium_yuan - previousAgg.signed_premium_yuan,
@@ -467,13 +474,57 @@ export class KPIEngine {
         previousAgg.marginal_contribution_amount_yuan,
     }
 
-    // 计算增量 KPI（传入mode和其他选项）
-    const result = computeKPIs(incrementAgg, {
+    // 1. 计算增量 KPI（绝对值指标使用增量数据）
+    const incrementResult = computeKPIs(incrementAgg, {
       premiumTargetYuan: annualTargetYuan,
       mode,
       currentWeekNumber,
       year,
     })
+
+    // 2. 计算基于累计数据的比率指标（赔付率、费用率等必须基于累计数据）
+    const cumulativeResult = computeKPIs(currentAgg, {
+      premiumTargetYuan: annualTargetYuan,
+      mode: 'current', // 使用当周值模式计算比率
+      currentWeekNumber,
+      year,
+    })
+
+    // 3. 合并结果：绝对值使用增量，比率使用累计
+    const result: KPIResult = {
+      // 【比率指标】使用累计数据计算（累计赔款/累计保费）
+      loss_ratio: cumulativeResult.loss_ratio,
+      maturity_ratio: cumulativeResult.maturity_ratio,
+      expense_ratio: cumulativeResult.expense_ratio,
+      contribution_margin_ratio: cumulativeResult.contribution_margin_ratio,
+      variable_cost_ratio: cumulativeResult.variable_cost_ratio,
+      matured_claim_ratio: cumulativeResult.matured_claim_ratio,
+      autonomy_coefficient: cumulativeResult.autonomy_coefficient,
+
+      // 【绝对值指标】使用增量数据（当周增量）
+      signed_premium: incrementResult.signed_premium,
+      matured_premium: incrementResult.matured_premium,
+      policy_count: incrementResult.policy_count,
+      claim_case_count: incrementResult.claim_case_count,
+      reported_claim_payment: incrementResult.reported_claim_payment,
+      expense_amount: incrementResult.expense_amount,
+      contribution_margin_amount: incrementResult.contribution_margin_amount,
+
+      // 【均值指标】使用增量数据计算（增量金额/增量件数）
+      average_premium: incrementResult.average_premium,
+      average_claim: incrementResult.average_claim,
+      average_expense: incrementResult.average_expense,
+      average_contribution: incrementResult.average_contribution,
+
+      // 【时间进度】使用增量数据
+      premium_progress: incrementResult.premium_progress,
+      premium_time_progress_achievement_rate: incrementResult.premium_time_progress_achievement_rate,
+      policy_count_time_progress_achievement_rate: incrementResult.policy_count_time_progress_achievement_rate,
+
+      // 【年度目标】
+      annual_premium_target: incrementResult.annual_premium_target,
+      annual_policy_count_target: incrementResult.annual_policy_count_target,
+    }
 
     // 缓存结果
     if (useCache) {

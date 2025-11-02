@@ -17,7 +17,7 @@ import {
   YAxis,
   Line,
 } from 'recharts'
-import type { LegendPayload } from 'recharts/types/component/Legend'
+
 import { TrendingUp, AlertTriangle, Settings } from 'lucide-react'
 
 import { useTrendData } from '@/hooks/use-trend'
@@ -130,7 +130,7 @@ const TrendTooltip = React.memo(function TrendTooltip({
   analyticsMap,
   trendMap,
   anomalyMap,
-}: TooltipProps<number, string> & {
+}: any & {
   analyticsMap: Map<string, PointAnalytics>
   trendMap: Map<string, number>
   anomalyMap: Map<string, { score: number; type: string }>
@@ -453,7 +453,7 @@ export const TrendChart = React.memo(function TrendChart() {
       })
     }
 
-    if (latestPoint && latestAnalytics?.maturedShare !== null) {
+    if (latestPoint && latestAnalytics?.maturedShare !== null && latestAnalytics) {
       candidates.push({
         id: 'maturity-share',
         text: `${latestPoint.label} 满期占比 ${formatPercent(latestAnalytics.maturedShare * 100, 1)}，衡量业务兑现能力`,
@@ -465,7 +465,7 @@ export const TrendChart = React.memo(function TrendChart() {
 
   const legendHandlers = useMemo(
     () => ({
-      onClick: (payload: LegendPayload) => {
+      onClick: (payload: any) => {
         const name = payload?.value ?? ''
         const key: SeriesKey = name.includes('签单')
           ? 'signed'
@@ -474,7 +474,7 @@ export const TrendChart = React.memo(function TrendChart() {
             : 'loss'
         setVisible(v => ({ ...v, [key]: !v[key] }))
       },
-      onMouseEnter: (payload: LegendPayload) => {
+      onMouseEnter: (payload: any) => {
         const name = payload?.value ?? ''
         const key: SeriesKey = name.includes('签单')
           ? 'signed'
@@ -753,7 +753,7 @@ export const TrendChart = React.memo(function TrendChart() {
                 y2={Math.max(lossStats.max, LOSS_RISK_THRESHOLD)}
                 fill="#fee2e2"
                 fillOpacity={0.45}
-                stroke={false}
+                stroke="none"
               />
             )}
 
