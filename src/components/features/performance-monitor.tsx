@@ -17,7 +17,7 @@ import { Database, Zap, Filter, Clock, TrendingUp, CheckCircle } from 'lucide-re
 export function PerformanceMonitor() {
   const [renderTime, setRenderTime] = useState(0)
   const cacheStats = useCacheStore(state => state.getCacheStats())
-  const dataStats = useDataStore(state => state.stats)
+  const rawData = useDataStore(state => state.rawData)
   const activeFilterCount = useFilterStore(state => state.getActiveFilterCount())
 
   // 监控渲染性能
@@ -37,7 +37,7 @@ export function PerformanceMonitor() {
   // 性能评分（0-100）
   const performanceScore = Math.min(100, Math.round(
     (hitRate * 0.4) + // 缓存命中率占40%
-    (dataStats.totalRecords > 0 ? 30 : 0) + // 有数据占30%
+    (rawData.length > 0 ? 30 : 0) + // 有数据占30%
     (renderTime < 100 ? 30 : renderTime < 500 ? 20 : 10) // 渲染速度占30%
   ))
 
@@ -104,13 +104,13 @@ export function PerformanceMonitor() {
               <span className="text-sm font-medium text-green-900">数据统计</span>
             </div>
             <div className="text-2xl font-bold text-green-600 mb-1">
-              {dataStats.totalRecords.toLocaleString()}
+              {rawData.length.toLocaleString()}
             </div>
             <div className="text-xs text-green-700">
               总记录数
             </div>
             <div className="text-xs text-green-600 mt-1">
-              {dataStats.weekRange.length > 0 && `周次范围: ${dataStats.weekRange.length}周`}
+              {rawData.length > 0 && `数据已加载`}
             </div>
           </div>
 

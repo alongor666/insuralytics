@@ -18,7 +18,7 @@ import type { InsuranceRecord, FilterState } from '@/types/insurance'
  * 数据持久化 Hook
  * 自动保存和恢复数据到 localStorage / IndexedDB
  */
-export function usePersistData() {
+export function usePersistData(initialData: InsuranceRecord[] = []) {
   const rawData = useAppStore(state => state.rawData)
   const filters = useAppStore(state => state.filters)
   const setRawData = useAppStore(state => state.setRawData)
@@ -29,6 +29,12 @@ export function usePersistData() {
     let cancelled = false
 
     async function restore() {
+      // 如果 store 中已有数据，则不执行任何操作
+      if (useAppStore.getState().rawData.length > 0) {
+        console.log('[Persist] Store 已有数据，跳过恢复操作。')
+        return
+      }
+
       const savedData = getStorageItem<InsuranceRecord[]>(StorageKeys.RAW_DATA)
       const savedFilters = getStorageItem<FilterState>(StorageKeys.FILTERS)
 
@@ -43,6 +49,10 @@ export function usePersistData() {
           console.log(`[Persist] 从 IndexedDB 恢复了 ${idbData.length} 条数据`)
           setRawData(idbData)
         }
+      } else if (initialData && initialData.length > 0) {
+        // 如果本地没有数据，则使用从服务器获取的初始数据
+        console.log(`[Persist] 从服务器初始了 ${initialData.length} 条数据`)
+        setRawData(initialData)
       }
 
       if (savedFilters) {
@@ -55,7 +65,7 @@ export function usePersistData() {
     return () => {
       cancelled = true
     }
-  }, [setRawData, updateFilters]) // 空依赖数组,仅在挂载时执行
+  }, [initialData, setRawData, updateFilters])
 
   // 保存数据到 IndexedDB / localStorage (当数据变化时)
   useEffect(() => {

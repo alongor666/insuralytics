@@ -9,13 +9,13 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { FileUpload } from './file-upload'
 import { DataExport } from './data-export'
 import { PDFReportExport } from './pdf-report-export'
-import { FilterPanel } from '@/components/filters/filter-panel'
+
 import { useAppStore } from '@/store/use-app-store'
 import { usePersistData } from '@/hooks/use-persist-data'
 import { Database, Download, Trash2, Filter } from 'lucide-react'
 
 export function DataManagementPanel() {
-  const [activeSubTab, setActiveSubTab] = useState<'upload' | 'export' | 'filters'>('upload')
+  const [activeSubTab, setActiveSubTab] = useState<'upload' | 'export'>('upload')
   const { clearPersistedData } = usePersistData()
   const rawData = useAppStore(state => state.rawData)
 
@@ -37,7 +37,7 @@ export function DataManagementPanel() {
           <div>
             <h2 className="text-xl font-semibold text-slate-800">导入导出</h2>
             <p className="text-sm text-slate-600 mt-1">
-              管理数据导入、导出和业务筛选
+              管理数据导入和导出
             </p>
           </div>
         </div>
@@ -58,7 +58,7 @@ export function DataManagementPanel() {
 
       {/* 主内容区 - 子标签页 */}
       <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
-        <Tabs value={activeSubTab} onValueChange={(v) => setActiveSubTab(v as 'upload' | 'export' | 'filters')}>
+        <Tabs value={activeSubTab} onValueChange={(v) => setActiveSubTab(v as 'upload' | 'export')}>
           <div className="border-b border-slate-200 px-6 pt-4">
             <TabsList className="bg-slate-100">
               <TabsTrigger value="upload" className="gap-2">
@@ -69,10 +69,7 @@ export function DataManagementPanel() {
                 <Download className="w-4 h-4" />
                 导出数据
               </TabsTrigger>
-              <TabsTrigger value="filters" className="gap-2">
-                <Filter className="w-4 h-4" />
-                业务筛选
-              </TabsTrigger>
+
             </TabsList>
           </div>
 
@@ -110,9 +107,7 @@ export function DataManagementPanel() {
             </div>
           </TabsContent>
 
-          <TabsContent value="filters" className="p-6 m-0">
-            <FilterPanel />
-          </TabsContent>
+
         </Tabs>
       </div>
     </div>

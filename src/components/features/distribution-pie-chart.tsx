@@ -67,7 +67,7 @@ export const DistributionPieChart = React.memo(function DistributionPieChart() {
         <ResponsiveContainer width="100%" height="100%">
           <PieChart>
             <Pie
-              data={data}
+              data={data as any}
               dataKey="value"
               nameKey="label"
               cx="50%"

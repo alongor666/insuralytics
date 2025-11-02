@@ -1,6 +1,6 @@
 /**
- * 多维健康度雷达图组件
- * 综合展示5个核心维度的健康评分，支持当前周与上周对比
+ * 多维健康度雷达图组件 - 机构对比版本
+ * 综合展示5个核心维度的健康评分，支持多个机构（最多7个）的对比分析
  */
 
 'use client'
@@ -24,355 +24,362 @@ import {
 } from '@/utils/radar-score'
 import { formatPercent, formatNumber } from '@/utils/format'
 import { cn } from '@/lib/utils'
+import { getOrganizationColor } from '@/utils/organization-config'
+import { OrganizationSelector } from './organization-selector'
+import { useMultipleOrganizationKPIs } from '@/hooks/use-organization-kpi'
+import { getAllQuickFilters } from '@/utils/quick-filters'
 import type { KPIResult } from '@/types/insurance'
+import { ALL_ORGANIZATIONS } from '@/utils/organization-config'
 
 interface MultiDimensionRadarProps {
-  /** 当前周期的 KPI 数据 */
-  currentKpi: KPIResult | null
-  /** 对比周期的 KPI 数据（上周） */
-  compareKpi?: KPIResult | null
-  /** 对比周次号 */
-  compareWeekNumber?: number | null
   /** 自定义类名 */
   className?: string
 }
 
 /**
- * 多维健康度雷达图
+ * 雷达数据点（支持多个机构）
  */
-export function MultiDimensionRadar({
-  currentKpi,
-  compareKpi,
-  compareWeekNumber,
-  className,
-}: MultiDimensionRadarProps) {
-  // 悬停状态：跟踪当前高亮的维度
+interface RadarDataPoint {
+  dimension: string // 维度简称
+  fullLabel: string // 维度全称
+  dimensionKey: string // 维度key
+  unit: string
+  description: string
+
+  // 动态机构评分字段（使用索引签名）
+  [key: string]: string | number | Record<string, any>
+
+  // 辅助数据
+  rawValues: Record<string, number>
+  levels: Record<string, string>
+  colors: Record<string, string>
+}
+
+/**
+ * 多维健康度雷达图 - 机构对比
+ */
+export function MultiDimensionRadar({ className }: MultiDimensionRadarProps) {
+  // 机构选择状态（默认选择前3个）
+  const [selectedOrganizations, setSelectedOrganizations] = useState<string[]>([
+    '天府',
+    '高新',
+    '宜宾',
+  ])
+
+  // 悬停状态
   const [hoveredDimension, setHoveredDimension] = useState<string | null>(null)
 
+  // 获取所有机构的KPI（用于快捷筛选）
+  const allOrgKPIs = useMultipleOrganizationKPIs(Array.from(ALL_ORGANIZATIONS))
+
+  // 获取已选机构的KPI
+  const selectedOrgKPIs = useMultipleOrganizationKPIs(selectedOrganizations)
+
+  // 生成快捷筛选列表
+  const quickFilters = useMemo(() => {
+    return getAllQuickFilters(allOrgKPIs)
+  }, [allOrgKPIs])
+
   // 转换为雷达图数据
-  const radarData = useMemo(() => {
-    const currentScores = convertKPIToRadarScores(currentKpi)
-    const compareScores = compareKpi
-      ? convertKPIToRadarScores(compareKpi)
-      : new Map()
-
+  const radarData = useMemo((): RadarDataPoint[] => {
+    // 为每个维度创建数据点
     return RADAR_DIMENSIONS.map((dim) => {
-      const currentResult = currentScores.get(dim.key)
-      const compareResult = compareScores.get(dim.key)
-
-      return {
+      const dataPoint: RadarDataPoint = {
         dimension: dim.shortLabel,
         fullLabel: dim.label,
         dimensionKey: dim.key,
-        current: currentResult?.score ?? 0,
-        compare: compareResult?.score ?? 0,
-        currentRaw: currentResult?.rawValue ?? null,
-        compareRaw: compareResult?.rawValue ?? null,
-        currentLevel: currentResult?.level ?? 'medium',
-        currentLabel: currentResult?.label ?? '-',
-        currentColor: currentResult?.color ?? '#94a3b8',
         unit: dim.unit,
         description: dim.description,
+        rawValues: {},
+        levels: {},
+        colors: {},
+      }
+
+      // 为每个已选机构添加评分
+      selectedOrganizations.forEach((orgName) => {
+        const kpi = selectedOrgKPIs.get(orgName)
+        const scores = kpi ? convertKPIToRadarScores(kpi) : new Map()
+        const scoreResult = scores.get(dim.key)
+
+        // 添加评分（使用机构名作为key）
+        dataPoint[orgName] = scoreResult?.score ?? 0
+
+        // 添加辅助数据
+        dataPoint.rawValues[orgName] = scoreResult?.rawValue ?? 0
+        dataPoint.levels[orgName] = scoreResult?.label ?? '-'
+        dataPoint.colors[orgName] = scoreResult?.color ?? '#94a3b8'
+      })
+
+      return dataPoint
+    })
+  }, [selectedOrganizations, selectedOrgKPIs])
+
+  // 计算每个机构的综合评分
+  const overallScores = useMemo(() => {
+    const scores: Record<string, number> = {}
+
+    selectedOrganizations.forEach((orgName) => {
+      const validScores = radarData
+        .map((d) => d[orgName] as number)
+        .filter((s) => s > 0)
+
+      if (validScores.length > 0) {
+        scores[orgName] = Math.round(
+          validScores.reduce((sum, s) => sum + s, 0) / validScores.length
+        )
+      } else {
+        scores[orgName] = 0
       }
     })
-  }, [currentKpi, compareKpi])
 
-  // 计算综合健康评分（5个维度的平均分）
-  const overallScore = useMemo(() => {
-    const validScores = radarData
-      .map((d) => d.current)
-      .filter((s) => s > 0)
-    if (validScores.length === 0) return null
-    return Math.round(
-      validScores.reduce((sum, s) => sum + s, 0) / validScores.length
-    )
-  }, [radarData])
+    return scores
+  }, [selectedOrganizations, radarData])
 
-  // 综合健康等级
-  const overallLevel = useMemo(() => {
-    if (!overallScore) return { label: '-', color: '#94a3b8' }
-    if (overallScore >= 95) return { label: '卓越', color: '#2E7D32' }
-    if (overallScore >= 86) return { label: '良好', color: '#4CAF50' }
-    if (overallScore >= 70) return { label: '中等', color: '#1976D2' }
-    if (overallScore >= 20) return { label: '预警', color: '#F57C00' }
+  // 获取综合评分等级
+  const getOverallLevel = (score: number) => {
+    if (score >= 95) return { label: '卓越', color: '#2E7D32' }
+    if (score >= 86) return { label: '良好', color: '#4CAF50' }
+    if (score >= 70) return { label: '中等', color: '#1976D2' }
+    if (score >= 20) return { label: '预警', color: '#F57C00' }
     return { label: '高危', color: '#D32F2F' }
-  }, [overallScore])
+  }
 
   // 自定义 Tooltip
   const CustomTooltip = ({ active, payload }: any) => {
     if (!active || !payload || !payload.length) return null
 
-    const data = payload[0].payload
+    const data = payload[0].payload as RadarDataPoint
+
     return (
       <div className="rounded-lg border border-slate-200 bg-white p-3 shadow-lg">
         <p className="mb-2 text-sm font-semibold text-slate-800">
           {data.fullLabel}
         </p>
-        <div className="space-y-1 text-xs">
-          <div className="flex items-center justify-between gap-4">
-            <span className="text-slate-600">当前值：</span>
-            <span className="font-medium text-slate-800">
-              {data.currentRaw !== null
-                ? `${formatPercent(data.currentRaw, 2)}`
-                : '-'}
-            </span>
-          </div>
-          <div className="flex items-center justify-between gap-4">
-            <span className="text-slate-600">当前评分：</span>
-            <span
-              className="font-semibold"
-              style={{ color: data.currentColor }}
-            >
-              {data.current > 0 ? formatNumber(data.current, 1) : '-'}
-            </span>
-          </div>
-          <div className="flex items-center justify-between gap-4">
-            <span className="text-slate-600">等级：</span>
-            <span
-              className="font-medium"
-              style={{ color: data.currentColor }}
-            >
-              {data.currentLabel}
-            </span>
-          </div>
-          {compareKpi && data.compareRaw !== null && (
-            <>
-              <div className="my-1 border-t border-slate-200"></div>
-              <div className="flex items-center justify-between gap-4">
-                <span className="text-slate-600">
-                  上周值（W{compareWeekNumber}）：
+
+        <div className="space-y-1.5">
+          {payload.map((entry: any, index: number) => {
+            const orgName = entry.name
+            const score = entry.value
+            const rawValue = data.rawValues[orgName]
+            const level = data.levels[orgName]
+            const color = data.colors[orgName]
+
+            return (
+              <div key={orgName} className="flex items-center gap-3 text-xs">
+                {/* 颜色点 */}
+                <div
+                  className="h-3 w-3 rounded-full"
+                  style={{ backgroundColor: entry.stroke }}
+                />
+
+                {/* 机构名 */}
+                <span className="w-12 font-medium text-slate-700">
+                  {orgName}
                 </span>
-                <span className="font-medium text-slate-600">
-                  {formatPercent(data.compareRaw, 2)}
+
+                {/* 评分 */}
+                <span className="font-bold text-slate-900">
+                  {formatNumber(score, 1)}
                 </span>
-              </div>
-              <div className="flex items-center justify-between gap-4">
-                <span className="text-slate-600">上周评分：</span>
-                <span className="font-medium text-slate-600">
-                  {data.compare > 0 ? formatNumber(data.compare, 1) : '-'}
+
+                {/* 原始值 */}
+                {rawValue !== undefined && (
+                  <span className="text-slate-500">
+                    ({formatPercent(rawValue, 1)})
+                  </span>
+                )}
+
+                {/* 等级 */}
+                <span className="font-medium" style={{ color }}>
+                  {level}
                 </span>
               </div>
-              <div className="flex items-center justify-between gap-4">
-                <span className="text-slate-600">评分变化：</span>
-                <span
-                  className={cn(
-                    'font-semibold',
-                    data.current - data.compare > 0
-                      ? 'text-green-600'
-                      : data.current - data.compare < 0
-                        ? 'text-red-600'
-                        : 'text-slate-600'
-                  )}
-                >
-                  {data.current - data.compare > 0 ? '+' : ''}
-                  {formatNumber(data.current - data.compare, 1)}
-                </span>
-              </div>
-            </>
-          )}
+            )
+          })}
+        </div>
+
+        {/* 最优机构 */}
+        <div className="mt-2 border-t border-slate-200 pt-2">
+          <p className="text-xs text-slate-500">
+            最优: {getBestOrgForDimension(data)} 🏆
+          </p>
         </div>
       </div>
     )
   }
 
-  if (!currentKpi) {
+  // 获取某维度的最优机构
+  const getBestOrgForDimension = (data: RadarDataPoint): string => {
+    let bestOrg = ''
+    let bestScore = -1
+
+    selectedOrganizations.forEach((orgName) => {
+      const score = data[orgName] as number
+      if (score > bestScore) {
+        bestScore = score
+        bestOrg = orgName
+      }
+    })
+
+    return bestOrg || '-'
+  }
+
+  // 空状态
+  if (selectedOrganizations.length === 0) {
     return (
-      <div className="rounded-2xl border border-slate-200 bg-white/60 p-8 text-center backdrop-blur-sm">
-        <p className="text-sm text-slate-500">暂无数据</p>
+      <div className={cn('space-y-6', className)}>
+        <OrganizationSelector
+          selectedOrganizations={selectedOrganizations}
+          onChange={setSelectedOrganizations}
+          quickFilters={quickFilters}
+        />
+
+        <div className="rounded-2xl border border-slate-200 bg-white/60 p-8 text-center backdrop-blur-sm">
+          <p className="text-sm text-slate-500">请选择要对比的机构</p>
+        </div>
       </div>
     )
   }
 
   return (
-    <div
-      className={cn(
-        'rounded-2xl border border-white/50 bg-white/40 shadow-lg backdrop-blur-xl',
-        className
-      )}
-    >
-      {/* 标题栏 */}
-      <div className="border-b border-slate-200/50 p-6">
-        <div className="flex items-start justify-between">
-          <div>
-            <h3 className="text-lg font-semibold text-slate-800">
-              多维健康度雷达图
-            </h3>
-            <p className="mt-1 text-xs text-slate-500">
-              综合评估5个核心维度的业务健康状况
-            </p>
-          </div>
-          {overallScore !== null && (
-            <div className="rounded-lg border border-slate-200 bg-white px-4 py-2 text-center">
-              <p className="text-xs text-slate-600">综合评分</p>
-              <p
-                className="text-2xl font-bold"
-                style={{ color: overallLevel.color }}
-              >
-                {overallScore}
-              </p>
-              <p
-                className="text-xs font-medium"
-                style={{ color: overallLevel.color }}
-              >
-                {overallLevel.label}
+    <div className={cn('space-y-6', className)}>
+      {/* 机构选择器 */}
+      <OrganizationSelector
+        selectedOrganizations={selectedOrganizations}
+        onChange={setSelectedOrganizations}
+        quickFilters={quickFilters}
+      />
+
+      {/* 雷达图主体 */}
+      <div className="rounded-2xl border border-white/50 bg-white/40 shadow-lg backdrop-blur-xl">
+        {/* 标题栏 */}
+        <div className="border-b border-slate-200/50 p-6">
+          <div className="flex items-start justify-between">
+            <div>
+              <h3 className="text-lg font-semibold text-slate-800">
+                多维健康度雷达图 - 机构对比
+              </h3>
+              <p className="mt-1 text-xs text-slate-500">
+                综合对比{selectedOrganizations.length}个机构在5个核心维度的业务健康状况
               </p>
             </div>
-          )}
-        </div>
-      </div>
 
-      {/* 雷达图 */}
-      <div className="p-6">
-        <div className="h-96">
-          <ResponsiveContainer width="100%" height="100%">
-            <RadarChart data={radarData}>
-              <PolarGrid stroke="#cbd5e1" strokeWidth={1} />
-              <PolarAngleAxis
-                dataKey="dimension"
-                tick={{
-                  fill: '#475569',
-                  fontSize: 13,
-                  fontWeight: 600,
-                }}
-                tickLine={false}
-              />
-              <PolarRadiusAxis
-                angle={90}
-                domain={[0, 100]}
-                tick={{ fill: '#94a3b8', fontSize: 11 }}
-                tickCount={6}
-              />
-              <Radar
-                name="当前周"
-                dataKey="current"
-                stroke="#1976D2"
-                fill="#1976D2"
-                fillOpacity={0.25}
-                strokeWidth={2.5}
-                dot={{
-                  r: 5,
-                  fill: '#1976D2',
-                  strokeWidth: 0,
-                }}
-                activeDot={{
-                  r: 7,
-                  fill: '#1976D2',
-                  stroke: '#fff',
-                  strokeWidth: 2,
-                }}
-                onMouseEnter={(data: any) =>
-                  setHoveredDimension(data.dimensionKey)
-                }
-                onMouseLeave={() => setHoveredDimension(null)}
-              />
-              {compareKpi && (
-                <Radar
-                  name={`上周 (W${compareWeekNumber || '-'})`}
-                  dataKey="compare"
-                  stroke="#94a3b8"
-                  fill="#94a3b8"
-                  fillOpacity={0.15}
-                  strokeWidth={2}
-                  strokeDasharray="5 5"
-                  dot={{
-                    r: 4,
-                    fill: '#94a3b8',
-                    strokeWidth: 0,
+            {/* 综合排名（前3名） */}
+            <div className="rounded-lg border border-slate-200 bg-white p-3">
+              <p className="mb-2 text-xs font-medium text-slate-600">综合排名</p>
+              {Object.entries(overallScores)
+                .sort(([, a], [, b]) => b - a)
+                .slice(0, 3)
+                .map(([orgName, score], index) => {
+                  const level = getOverallLevel(score)
+                  const medals = ['🥇', '🥈', '🥉']
+                  const orgIndex = selectedOrganizations.indexOf(orgName)
+                  const color = getOrganizationColor(orgIndex)
+
+                  return (
+                    <div
+                      key={orgName}
+                      className="mb-1.5 flex items-center gap-2 last:mb-0"
+                    >
+                      <span className="text-sm">{medals[index]}</span>
+                      <div
+                        className="h-2 w-2 rounded-full"
+                        style={{ backgroundColor: color }}
+                      />
+                      <span className="text-xs font-medium text-slate-700">
+                        {orgName}
+                      </span>
+                      <span
+                        className="ml-auto text-sm font-bold"
+                        style={{ color: level.color }}
+                      >
+                        {score}
+                      </span>
+                    </div>
+                  )
+                })}
+            </div>
+          </div>
+        </div>
+
+        {/* 雷达图 */}
+        <div className="p-6">
+          <div className="h-96">
+            <ResponsiveContainer width="100%" height="100%">
+              <RadarChart data={radarData}>
+                <PolarGrid stroke="#cbd5e1" strokeWidth={1} />
+                <PolarAngleAxis
+                  dataKey="dimension"
+                  tick={{
+                    fill: '#475569',
+                    fontSize: 13,
+                    fontWeight: 600,
                   }}
-                  onMouseEnter={(data: any) =>
-                    setHoveredDimension(data.dimensionKey)
-                  }
-                  onMouseLeave={() => setHoveredDimension(null)}
+                  tickLine={false}
                 />
-              )}
-              <Tooltip content={<CustomTooltip />} />
-              <Legend
-                wrapperStyle={{
-                  paddingTop: '20px',
-                }}
-                iconType="circle"
-              />
-            </RadarChart>
-          </ResponsiveContainer>
-        </div>
-      </div>
+                <PolarRadiusAxis
+                  angle={90}
+                  domain={[0, 100]}
+                  tick={{ fill: '#94a3b8', fontSize: 11 }}
+                  tickCount={6}
+                />
 
-      {/* 维度详细卡片 */}
-      <div className="border-t border-slate-200/50 p-6">
-        <div className="mb-4 flex items-center gap-2">
-          <Info className="h-4 w-4 text-slate-500" />
-          <p className="text-xs font-medium text-slate-600">维度详情</p>
-        </div>
-        <div className="grid grid-cols-5 gap-3">
-          {radarData.map((dim) => {
-            const isHovered = hoveredDimension === dim.dimensionKey
-            const scoreChange = dim.compare > 0 ? dim.current - dim.compare : null
+                {/* 为每个机构渲染一条Radar折线 */}
+                {selectedOrganizations.map((orgName, index) => {
+                  const color = getOrganizationColor(index)
 
-            return (
-              <div
-                key={dim.dimensionKey}
-                className={cn(
-                  'rounded-lg border bg-white p-3 transition-all duration-200',
-                  isHovered
-                    ? 'border-blue-400 shadow-md ring-2 ring-blue-200'
-                    : 'border-slate-200 hover:border-slate-300 hover:shadow-sm'
-                )}
-                onMouseEnter={() => setHoveredDimension(dim.dimensionKey)}
-                onMouseLeave={() => setHoveredDimension(null)}
-              >
-                <p className="mb-2 text-xs font-medium text-slate-700">
-                  {dim.fullLabel}
-                </p>
-                <div className="mb-1 flex items-baseline justify-between">
-                  <span className="text-lg font-bold text-slate-800">
-                    {dim.currentRaw !== null
-                      ? formatPercent(dim.currentRaw, 1)
-                      : '-'}
-                  </span>
-                  <span
-                    className="text-xs font-semibold"
-                    style={{ color: dim.currentColor }}
-                  >
-                    {dim.currentLabel}
-                  </span>
-                </div>
-                <div className="mb-2 flex items-center justify-between text-xs">
-                  <span className="text-slate-500">评分</span>
-                  <span
-                    className="font-semibold"
-                    style={{ color: dim.currentColor }}
-                  >
-                    {dim.current > 0 ? formatNumber(dim.current, 1) : '-'}
-                  </span>
-                </div>
-                {scoreChange !== null && (
-                  <div
-                    className={cn(
-                      'mt-2 rounded px-2 py-1 text-center text-xs font-medium',
-                      scoreChange > 0
-                        ? 'bg-green-50 text-green-700'
-                        : scoreChange < 0
-                          ? 'bg-red-50 text-red-700'
-                          : 'bg-slate-50 text-slate-600'
-                    )}
-                  >
-                    {scoreChange > 0 ? '↑' : scoreChange < 0 ? '↓' : ''}
-                    {scoreChange > 0 ? '+' : ''}
-                    {formatNumber(scoreChange, 1)}
-                  </div>
-                )}
-              </div>
-            )
-          })}
-        </div>
-      </div>
+                  return (
+                    <Radar
+                      key={orgName}
+                      name={orgName}
+                      dataKey={orgName}
+                      stroke={color}
+                      fill={color}
+                      fillOpacity={0.08}
+                      strokeWidth={2.5}
+                      dot={{
+                        r: 5,
+                        fill: color,
+                        strokeWidth: 0,
+                      }}
+                      activeDot={{
+                        r: 7,
+                        fill: color,
+                        stroke: '#fff',
+                        strokeWidth: 2,
+                      }}
+                      onMouseEnter={(data: any) =>
+                        setHoveredDimension(data.dimensionKey)
+                      }
+                      onMouseLeave={() => setHoveredDimension(null)}
+                    />
+                  )
+                })}
 
-      {/* 说明文本 */}
-      <div className="border-t border-slate-200/50 bg-slate-50/50 px-6 py-3">
-        <p className="text-xs text-slate-500">
-          💡 提示：评分基于业务规则自动计算，范围为 0-100
-          分。卓越（95-100）、良好（86-94）、中等（70-85）、预警（20-69）、高危（0-19）
-        </p>
+                <Tooltip content={<CustomTooltip />} />
+                <Legend
+                  wrapperStyle={{
+                    paddingTop: '20px',
+                  }}
+                  iconType="line"
+                  formatter={(value: string) => (
+                    <span style={{ fontSize: '13px', fontWeight: 500 }}>
+                      {value}
+                    </span>
+                  )}
+                />
+              </RadarChart>
+            </ResponsiveContainer>
+          </div>
+        </div>
+
+        {/* 说明文本 */}
+        <div className="border-t border-slate-200/50 bg-slate-50/50 px-6 py-3">
+          <p className="text-xs text-slate-500">
+            💡 提示：评分基于业务规则自动计算，范围为 0-100
+            分。卓越（95-100）、良好（86-94）、中等（70-85）、预警（20-69）、高危（0-19）
+          </p>
+        </div>
       </div>
     </div>
   )

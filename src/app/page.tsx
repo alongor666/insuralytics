@@ -1,281 +1,33 @@
-'use client'
+/**
+ * 主页面 - 服务器组件
+ * 负责在服务器端获取初始数据，并将其传递给客户端组件进行渲染
+ */
 
-import { Database } from 'lucide-react'
-import { FileUpload } from '@/components/features/file-upload'
-import { FullKPIDashboard } from '@/components/features/full-kpi-dashboard'
-import { TimeProgressIndicator } from '@/components/features/time-progress-indicator'
-import { TrendChart } from '@/components/features/trend-chart'
-import { WeeklyOperationalTrend } from '@/components/features/weekly-operational-trend'
-import { StructureBarChart } from '@/components/features/structure-bar-chart'
-import { DistributionPieChart } from '@/components/features/distribution-pie-chart'
-import { ComparisonAnalysisPanel } from '@/components/features/comparison-analysis'
-import { MultiDimensionRadar } from '@/components/features/multi-dimension-radar'
-// 移除页面内直接使用的导出组件，改由 TopToolbar 使用
-// import { DataExport } from '@/components/features/data-export'
-import { CustomerSegmentationBubble } from '@/components/features/customer-segmentation-bubble'
-import { ExpenseHeatmap } from '@/components/features/expense-heatmap'
-// import { PDFReportExport } from '@/components/features/pdf-report-export'
-import { ThematicAnalysis } from '@/components/features/thematic-analysis'
-import { FilterPanel } from '@/components/filters/filter-panel'
-// import { ViewModeSelector } from '@/components/filters/view-mode-selector'
-// import { DataViewSelector } from '@/components/filters/data-view-selector'
-// import { CompactTimeFilter } from '@/components/filters/compact-time-filter'
-// import { CompactOrganizationFilter } from '@/components/filters/compact-organization-filter'
-import {
-  FilterInteractionManager,
-  useFilterPersistence,
-} from '@/components/filters/filter-interaction-manager'
-import { TopToolbar } from '@/components/layout/top-toolbar'
-import { Toaster } from '@/components/ui/toaster'
-import { useInsuranceData } from '@/hooks/domains/useInsuranceData'
-import { useFiltering } from '@/hooks/domains/useFiltering'
-import { useKPICalculation } from '@/hooks/domains/useKPICalculation'
-import { useKPI } from '@/hooks/use-kpi'
-import { usePersistData } from '@/hooks/use-persist-data'
-import { useSmartComparison } from '@/hooks/use-smart-comparison'
-import { useState, useEffect, useMemo } from 'react'
-import { useRouter, useSearchParams } from 'next/navigation'
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogDescription,
-  DialogFooter,
-} from '@/components/ui/dialog'
-import { Button } from '@/components/ui/button'
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
-import {
-  AnalysisTabs,
-  type AnalysisTabValue,
-} from '@/components/layout/analysis-tabs'
-import { PredictionManagerPanel } from '@/components/features/prediction-manager'
-import { DataManagementPanel } from '@/components/features/data-management-panel'
-import { FilterManagementPanel } from '@/components/features/filter-management-panel'
+import { DataService } from '@/services/DataService'
+import { DashboardClient } from '@/components/dashboard-client'
+import { getDataSource } from '@/lib/supabase/client'
+import type { InsuranceRecord } from '@/types/insurance'
 
-export default function HomePage() {
-  // 使用新架构的 Hooks
-  const { rawData } = useInsuranceData()
-  const { setViewMode, viewMode } = useFiltering()
-  const kpiData = useKPI()
-  const { premiumTargets } = useKPICalculation()
-  const premiumTargetsOverall = premiumTargets?.overall
+export default async function HomePage() {
+  let initialData: InsuranceRecord[] = []
+  const dataSource = getDataSource()
 
-  // 使用智能环比数据（优化参数以避免无限重渲染）
-  const smartComparisonOptions = useMemo(
-    () => ({
-      annualTargetYuan: premiumTargetsOverall || null,
-    }),
-    [premiumTargetsOverall]
-  )
-  const { currentKpi, compareKpi, previousWeekNumber } =
-    useSmartComparison(smartComparisonOptions)
-
-  const [mounted, setMounted] = useState(false)
-  const router = useRouter()
-  const searchParams = useSearchParams()
-  const initialTabParam =
-    (searchParams?.get('tab') as AnalysisTabValue | null) ?? 'kpi'
-  const validTabs: AnalysisTabValue[] = [
-    'data-management',
-    'kpi',
-    'trend',
-    'thematic',
-    'multichart',
-    'prediction',
-    'targets',
-  ]
-  const initialTab: AnalysisTabValue = validTabs.includes(initialTabParam)
-    ? initialTabParam
-    : 'kpi'
-  const [activeTab, setActiveTab] = useState<AnalysisTabValue>(
-    initialTab === 'targets' ? 'kpi' : initialTab
-  )
-
-  // 使用数据持久化
-  usePersistData()
-
-  // 使用筛选器状态持久化
-  useFilterPersistence()
-
-  // 判断是否有数据
-  const hasData = rawData.length > 0
-
-  // 计算时间进度（当前年度已过天数占365天的百分比）
-  const timeProgress = useMemo(() => {
-    const now = new Date()
-    const startOfYear = new Date(now.getFullYear(), 0, 1)
-    const daysPassed = Math.floor(
-      (now.getTime() - startOfYear.getTime()) / (1000 * 60 * 60 * 24)
-    )
-    return (daysPassed / 365) * 100
-  }, [])
-
-  useEffect(() => {
-    setMounted(true)
-  }, [])
-
-  useEffect(() => {
-    if (initialTab === 'trend') {
-      setViewMode('trend')
-      setActiveTab('trend')
+  // 仅在使用 Supabase 数据源时尝试从服务器端获取数据
+  if (dataSource === 'supabase') {
+    try {
+      console.log('[HomePage] 尝试从 Supabase 获取初始数据...')
+      initialData = await DataService.fetchAllData()
+      console.log(`[HomePage] 成功获取 ${initialData.length} 条初始数据`)
+    } catch (e) {
+      console.warn('[HomePage] Supabase 数据获取失败，降级到本地模式:', e)
+      // 不显示错误页面，而是继续加载应用，让用户使用本地上传功能
+      initialData = []
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [])
-
-  if (!mounted) {
-    return null
+  } else {
+    console.log('[HomePage] 当前使用本地数据模式')
   }
 
-  const handleTabChange = (tab: AnalysisTabValue) => {
-    if (tab === 'targets') {
-      router.push('/targets')
-      return
-    }
-
-    setActiveTab(tab)
-    if (tab === 'trend' || tab === 'multichart') {
-      // 趋势与多维图表支持单选/多选，不强制切换模式
-    } else if (viewMode !== 'single') {
-      setViewMode('single')
-    }
-
-    if (tab === 'kpi') {
-      router.replace('/', { scroll: false })
-    } else {
-      router.replace(`/?tab=${tab}`, { scroll: false })
-    }
-  }
-
-  return (
-    <div className="min-h-screen p-8">
-      {/* 筛选器交互管理器 - 不渲染UI，只处理逻辑 */}
-      <FilterInteractionManager />
-
-      {/* 头部 */}
-      <header className="mb-8">
-        <div className="max-w-7xl mx-auto">
-          {/* 标题行 */}
-          <div className="flex items-start justify-between mb-6">
-            <div className="flex items-center gap-3">
-              <Database className="w-8 h-8 text-blue-600" />
-              <div>
-                <h1 className="text-3xl font-bold bg-gradient-to-r from-blue-600 to-cyan-600 bg-clip-text text-transparent">
-                  车险多维数据分析平台
-                </h1>
-                <p className="text-sm text-slate-600 mt-1">
-                  数据驱动决策 · 智能洞察业务 · 可视化分析
-                </p>
-              </div>
-            </div>
-            {/* 分析模式切换 - 移除，改由顶部标签页控制 */}
-            {/* {hasData && <ViewModeSelector />} */}
-          </div>
-
-          {/* 统一导航 Tabs，驱动内容与视图模式 */}
-          {hasData && (
-            <div className="mb-4">
-              <AnalysisTabs active={activeTab} onChange={handleTabChange} />
-            </div>
-          )}
-
-          {/* 顶部工具栏（已整合时间进度） - 放置在统一导航之下，数据管理页面不显示 */}
-          {hasData && activeTab !== 'data-management' && (
-            <div className="mb-4">
-              <TopToolbar rawCount={rawData.length} activeTab={activeTab} />
-            </div>
-          )}
-        </div>
-      </header>
-
-      {/* 主内容 */}
-      <main className="max-w-7xl mx-auto">
-        {!hasData && (
-          <div className="rounded-2xl border border-dashed border-slate-300 p-8 bg-white/60 backdrop-blur-sm">
-            <div className="flex items-center gap-3">
-              <Database className="w-6 h-6 text-slate-600" />
-              <h2 className="text-xl font-semibold text-slate-800">
-                上传数据文件以开始分析
-              </h2>
-            </div>
-            <div className="mt-6">
-              <FileUpload />
-            </div>
-          </div>
-        )}
-
-        {hasData && (
-          <div className="space-y-8">
-            {/* 数据管理页面 */}
-            {activeTab === 'data-management' && (
-              <div className="space-y-6">
-                <DataManagementPanel />
-              </div>
-            )}
-
-            {/* KPI 看板 - 使用完整版 */}
-            {activeTab === 'kpi' && (
-              <FullKPIDashboard
-                kpiData={currentKpi || kpiData}
-                compareData={compareKpi}
-                compareWeekNumber={previousWeekNumber}
-              />
-            )}
-
-            {/* 多周趋势分析 */}
-            {activeTab === 'trend' && (
-              <div className="space-y-6">
-                {/* 新版周度经营趋势 */}
-                <WeeklyOperationalTrend />
-                {/* 原版趋势图表（保留作为备份） */}
-                {/* <TrendChart /> */}
-              </div>
-            )}
-
-            {/* 预测管理 */}
-            {activeTab === 'prediction' && <PredictionManagerPanel />}
-
-            {/* 专题分析模块 */}
-            {activeTab === 'thematic' && (
-              <div className="space-y-8">
-                <ThematicAnalysis
-                  currentKpis={kpiData}
-                  timeProgress={timeProgress}
-                  compact={false}
-                />
-                <CustomerSegmentationBubble />
-                <ExpenseHeatmap />
-              </div>
-            )}
-
-            {/* 多维图表展示 */}
-            {activeTab === 'multichart' && (
-              <div className="space-y-8">
-                <MultiDimensionRadar
-                  currentKpi={currentKpi || kpiData}
-                  compareKpi={compareKpi}
-                  compareWeekNumber={previousWeekNumber}
-                />
-                <StructureBarChart />
-                <DistributionPieChart />
-                <ComparisonAnalysisPanel />
-              </div>
-            )}
-
-            {/* 说明区块 */}
-            <div className="rounded-2xl border border-slate-200 p-6 bg-white/60 backdrop-blur-sm">
-              <h3 className="text-lg font-semibold text-slate-800 mb-2">
-                数据可视化
-              </h3>
-              <p className="text-sm text-slate-600">
-                趋势图表、结构分析，让数据洞察更直观易懂
-              </p>
-            </div>
-          </div>
-        )}
-      </main>
-
-      <Toaster />
-    </div>
-  )
+  // 渲染客户端组件，并将初始数据作为 prop 传递
+  // 即使没有初始数据，也正常渲染页面，让用户可以上传 CSV 文件
+  return <DashboardClient initialData={initialData} />
 }

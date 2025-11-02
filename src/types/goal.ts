@@ -10,6 +10,7 @@ export interface GoalRow {
   bizType: string
   annualTargetInit: number
   annualTargetTuned: number
+  achieved?: number
 }
 
 export interface GoalVersion {
@@ -54,20 +55,28 @@ export interface GoalCsvRow {
 export interface GoalCsvParseOptions {
   skipValidation?: boolean
   allowUnknownBizTypes?: boolean
+  knownBusinessTypes?: string[]
+  unknownBusinessStrategy?: 'block' | 'ignore'
 }
 
 export interface GoalCsvParseResult {
   success: boolean
   data: GoalCsvRow[]
   issues: CsvIssue[]
+  rows?: GoalCsvRow[]
+  ignoredUnknownCount?: number
 }
 
 export interface CsvIssue {
-  row: number
-  field: string
-  value: string
+  row?: number
+  field?: string
+  value?: string
   message: string
-  severity: 'error' | 'warning'
+  severity?: 'error' | 'warning'
+  type?: string
+  rowIndex?: number
+  bizType?: string
+  rawValue?: string
 }
 
 export class GoalCsvParseError extends Error {

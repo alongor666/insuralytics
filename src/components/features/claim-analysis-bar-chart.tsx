@@ -19,23 +19,23 @@ import { getContributionMarginHexColor } from '@/utils/color-scale'
 // Y轴维度类型
 type YAxisDimension = 'business_type' | 'organization' | 'coverage_type'
 
-// X轴指标类型（保费分析）
+// X轴指标类型（赔付分析）
 type XAxisMetric =
-  | 'signed_premium'
-  | 'matured_premium'
-  | 'avg_premium'
-  | 'policy_count'
-  | 'maturity_ratio'
+  | 'reported_claim'
+  | 'claim_count'
+  | 'avg_claim'
+  | 'matured_claim_ratio'
+  | 'loss_ratio'
 
 // 聚合数据点类型
 interface DataPoint {
   key: string
   label: string
-  signed_premium_10k: number // 签单保费（万元）
-  matured_premium_10k: number // 满期保费（万元）
-  policy_count: number // 保单件数
-  avg_premium: number // 单均保费（元）
-  maturity_ratio: number // 满期率（%）
+  reported_claim_10k: number // 已报告赔款（万元）
+  claim_count: number // 赔案件数
+  avg_claim: number // 案均赔款（元）
+  matured_claim_ratio: number // 满期出险率（%）
+  loss_ratio: number // 满期赔付率（%）
   contribution_margin_ratio: number | null // 满期边际贡献率（%）
 }
 
@@ -47,9 +47,10 @@ function aggregateByDimension(
   const map = new Map<
     string,
     {
-      signed: number
-      matured: number
-      count: number
+      reportedClaim: number
+      claimCount: number
+      maturedPremium: number
+      policyCount: number
       contribution: number
     }
   >()
@@ -69,37 +70,44 @@ function aggregateByDimension(
     }
 
     if (!map.has(key)) {
-      map.set(key, { signed: 0, matured: 0, count: 0, contribution: 0 })
+      map.set(key, {
+        reportedClaim: 0,
+        claimCount: 0,
+        maturedPremium: 0,
+        policyCount: 0,
+        contribution: 0,
+      })
     }
     const entry = map.get(key)!
-    entry.signed += record.signed_premium_yuan
-    entry.matured += record.matured_premium_yuan
-    entry.count += record.policy_count
+    entry.reportedClaim += record.reported_claim_payment_yuan
+    entry.claimCount += record.claim_case_count
+    entry.maturedPremium += record.matured_premium_yuan
+    entry.policyCount += record.policy_count
     entry.contribution += record.marginal_contribution_amount_yuan
   }
 
   return Array.from(map.entries()).map(([key, value]) => ({
     key,
     label: key,
-    signed_premium_10k: value.signed / 10000,
-    matured_premium_10k: value.matured / 10000,
-    policy_count: value.count,
-    avg_premium: value.count > 0 ? value.signed / value.count : 0,
-    maturity_ratio: value.signed > 0 ? (value.matured / value.signed) * 100 : 0,
+    reported_claim_10k: value.reportedClaim / 10000,
+    claim_count: value.claimCount,
+    avg_claim: value.claimCount > 0 ? value.reportedClaim / value.claimCount : 0,
+    matured_claim_ratio: value.policyCount > 0 ? (value.claimCount / value.policyCount) * 100 : 0,
+    loss_ratio: value.maturedPremium > 0 ? (value.reportedClaim / value.maturedPremium) * 100 : 0,
     contribution_margin_ratio:
-      value.matured > 0 ? (value.contribution / value.matured) * 100 : null,
+      value.maturedPremium > 0 ? (value.contribution / value.maturedPremium) * 100 : null,
   }))
 }
 
 // 使用React.memo优化组件性能
-export const PremiumAnalysisBarChart = React.memo(function PremiumAnalysisBarChart() {
+export const ClaimAnalysisBarChart = React.memo(function ClaimAnalysisBarChart() {
   const filteredData = useFilteredData()
 
   // Y轴维度选择
   const [yDimension, setYDimension] = useState<YAxisDimension>('business_type')
 
   // X轴指标选择
-  const [xMetric, setXMetric] = useState<XAxisMetric>('matured_premium')
+  const [xMetric, setXMetric] = useState<XAxisMetric>('reported_claim')
 
   // TopN 控件
   const [topN, setTopN] = useState<number>(12)
@@ -113,16 +121,16 @@ export const PremiumAnalysisBarChart = React.memo(function PremiumAnalysisBarCha
     // 根据X轴指标排序
     aggregated.sort((a, b) => {
       switch (xMetric) {
-        case 'signed_premium':
-          return b.signed_premium_10k - a.signed_premium_10k
-        case 'matured_premium':
-          return b.matured_premium_10k - a.matured_premium_10k
-        case 'avg_premium':
-          return b.avg_premium - a.avg_premium
-        case 'policy_count':
-          return b.policy_count - a.policy_count
-        case 'maturity_ratio':
-          return b.maturity_ratio - a.maturity_ratio
+        case 'reported_claim':
+          return b.reported_claim_10k - a.reported_claim_10k
+        case 'claim_count':
+          return b.claim_count - a.claim_count
+        case 'avg_claim':
+          return b.avg_claim - a.avg_claim
+        case 'matured_claim_ratio':
+          return b.matured_claim_ratio - a.matured_claim_ratio
+        case 'loss_ratio':
+          return b.loss_ratio - a.loss_ratio
       }
     })
 
@@ -133,33 +141,33 @@ export const PremiumAnalysisBarChart = React.memo(function PremiumAnalysisBarCha
 
   // 获取当前指标的配置
   const metricConfig = {
-    signed_premium: {
-      dataKey: 'signed_premium_10k',
-      name: '签单保费',
+    reported_claim: {
+      dataKey: 'reported_claim_10k',
+      name: '已报告赔款',
       unit: '万元',
       formatter: (v: number) => formatNumber(v, 2),
     },
-    matured_premium: {
-      dataKey: 'matured_premium_10k',
-      name: '满期保费',
-      unit: '万元',
-      formatter: (v: number) => formatNumber(v, 2),
-    },
-    avg_premium: {
-      dataKey: 'avg_premium',
-      name: '单均保费',
-      unit: '元',
-      formatter: (v: number) => formatNumber(v, 0),
-    },
-    policy_count: {
-      dataKey: 'policy_count',
-      name: '保单件数',
+    claim_count: {
+      dataKey: 'claim_count',
+      name: '赔案件数',
       unit: '件',
       formatter: (v: number) => formatNumber(v, 0),
     },
-    maturity_ratio: {
-      dataKey: 'maturity_ratio',
-      name: '满期率',
+    avg_claim: {
+      dataKey: 'avg_claim',
+      name: '案均赔款',
+      unit: '元',
+      formatter: (v: number) => formatNumber(v, 0),
+    },
+    matured_claim_ratio: {
+      dataKey: 'matured_claim_ratio',
+      name: '满期出险率',
+      unit: '%',
+      formatter: (v: number) => formatNumber(v, 2) + '%',
+    },
+    loss_ratio: {
+      dataKey: 'loss_ratio',
+      name: '满期赔付率',
       unit: '%',
       formatter: (v: number) => formatNumber(v, 2) + '%',
     },
@@ -167,13 +175,13 @@ export const PremiumAnalysisBarChart = React.memo(function PremiumAnalysisBarCha
 
   return (
     <div
-      id="premium-analysis-chart"
+      id="claim-analysis-chart"
       className="rounded-2xl border border-white/50 bg-white/40 p-6 shadow-lg backdrop-blur-xl"
     >
       <div className="mb-4 flex flex-col gap-3">
         <div className="flex items-center justify-between">
           <div>
-            <h3 className="text-lg font-semibold text-slate-800">保费分析条形图</h3>
+            <h3 className="text-lg font-semibold text-slate-800">赔付分析条形图</h3>
             <p className="text-xs text-slate-500">
               {metricConfig.name}（{metricConfig.unit}） Top 排序
             </p>
@@ -212,11 +220,11 @@ export const PremiumAnalysisBarChart = React.memo(function PremiumAnalysisBarCha
               value={xMetric}
               onChange={e => setXMetric(e.target.value as XAxisMetric)}
             >
-              <option value="signed_premium">签单保费</option>
-              <option value="matured_premium">满期保费</option>
-              <option value="avg_premium">单均保费</option>
-              <option value="policy_count">保单件数</option>
-              <option value="maturity_ratio">满期率</option>
+              <option value="reported_claim">已报告赔款</option>
+              <option value="claim_count">赔案件数</option>
+              <option value="avg_claim">案均赔款</option>
+              <option value="matured_claim_ratio">满期出险率</option>
+              <option value="loss_ratio">满期赔付率</option>
             </select>
           </div>
         </div>
@@ -251,7 +259,7 @@ export const PremiumAnalysisBarChart = React.memo(function PremiumAnalysisBarCha
             >
               {chartData.map(dataPoint => (
                 <Cell
-                  key={`premium-bar-${dataPoint.key}`}
+                  key={`claim-bar-${dataPoint.key}`}
                   fill={getContributionMarginHexColor(
                     dataPoint.contribution_margin_ratio
                   )}

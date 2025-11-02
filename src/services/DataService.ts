@@ -16,8 +16,49 @@
 
 import type { InsuranceRecord, FilterState } from '@/types/insurance'
 import { normalizeChineseText } from '@/lib/utils'
+import { supabase, isSupabaseEnabled, getDataSource } from '@/lib/supabase/client'
 
 export class DataService {
+  /**
+   * 从数据库中获取所有保险记录
+   * @returns 所有保险记录的数组
+   */
+  static async fetchAllData(): Promise<InsuranceRecord[]> {
+    // 检查数据源类型
+    const dataSource = getDataSource()
+
+    if (dataSource === 'local' || !isSupabaseEnabled) {
+      console.log('[DataService] 当前使用本地数据模式，不从数据库获取数据')
+      return []
+    }
+
+    console.log('[DataService] 开始从 Supabase 数据库获取所有记录...')
+
+    try {
+      if (!supabase) {
+        console.warn('[DataService] Supabase 客户端未初始化')
+        return []
+      }
+
+      const { data, error } = await supabase.from('fact_insurance_cost').select('*')
+
+      if (error) {
+        console.error('[DataService] 数据库查询失败:', error)
+        throw new Error(`数据库查询失败: ${error.message}`)
+      }
+
+      console.log(`[DataService] 成功从 Supabase 获取 ${data.length} 条记录。`)
+
+      // 将从数据库蛇形命名法（snake_case）返回的数据映射到驼峰式命名法（camelCase）的类型，如果需要的话
+      // 在当前场景下，两边命名一致，因此直接断言类型
+      return data as InsuranceRecord[]
+    } catch (error) {
+      console.error('[DataService] 获取数据失败:', error)
+      // 不抛出错误，而是返回空数组，让应用降级到本地模式
+      return []
+    }
+  }
+
   /**
    * 根据筛选条件过滤数据
    * @param rawData 原始数据

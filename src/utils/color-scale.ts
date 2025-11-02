@@ -265,6 +265,26 @@ export function getDynamicColorByContributionMargin(
 }
 
 /**
+ * 根据满期边际贡献率获取直观填充色（十六进制）
+ * @param ratio 满期边际贡献率（%）
+ * @returns 十六进制颜色值
+ */
+export function getContributionMarginHexColor(
+  ratio: number | null | undefined
+): string {
+  if (ratio === null || ratio === undefined || isNaN(ratio)) {
+    return '#cbd5e1' // 默认：灰蓝色
+  }
+
+  if (ratio > 12) return '#2E7D32' // 优秀：深绿
+  if (ratio >= 8) return '#4CAF50' // 良好：浅绿
+  if (ratio >= 6) return '#1976D2' // 中等：蓝色
+  if (ratio >= 4) return '#FBC02D' // 一般：黄色
+  if (ratio >= 0) return '#F57C00' // 较差：橙色
+  return '#D32F2F' // 严重：红色
+}
+
+/**
  * 变动成本率五级预警色彩
  * @param ratio 变动成本率（%）= 费用率 + 满期赔付率
  * @returns ColorScale 色彩对象

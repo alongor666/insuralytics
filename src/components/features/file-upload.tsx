@@ -488,6 +488,7 @@ export function FileUpload() {
           最大文件大小：200MB | 支持多文件上传 | 仅支持 CSV 格式 |
           支持百万行数据导入
         </p>
+        </div>
       </div>
 
       {/* 清除数据确认对话框 */}
@@ -518,7 +519,6 @@ export function FileUpload() {
           </div>
         </div>
       )}
-    </div>
     </div>
   )
 }

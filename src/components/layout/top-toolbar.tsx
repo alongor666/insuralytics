@@ -4,6 +4,7 @@ import { DataViewSelector } from '@/components/filters/data-view-selector'
 import { CompactTimeFilter } from '@/components/filters/compact-time-filter'
 import { CompactOrganizationFilter } from '@/components/filters/compact-organization-filter'
 import { TimeProgressIndicator } from '@/components/features/time-progress-indicator'
+import { MoreFiltersDialog } from '@/components/features/more-filters-dialog'
 import type { AnalysisTabValue } from '@/components/layout/analysis-tabs'
 
 type WeekSelectionMode = 'single-only' | 'flexible'
@@ -36,10 +37,11 @@ export function TopToolbar({ rawCount, activeTab }: TopToolbarProps) {
             <DataViewSelector />
           </div>
 
-          {/* 第二组：机构选择器 + 时间进度（桌面端右侧，移动端第二行） */}
+          {/* 第二组：机构选择器 + 时间进度 + 更多筛选（桌面端右侧，移动端第二行） */}
           <div className="flex items-center gap-3 flex-wrap lg:flex-nowrap">
             <CompactOrganizationFilter />
             <TimeProgressIndicator compact />
+            <MoreFiltersDialog />
           </div>
         </div>
       </div>

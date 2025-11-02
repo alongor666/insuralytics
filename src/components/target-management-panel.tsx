@@ -68,8 +68,8 @@ export function TargetManagementPanel() {
           unknownBusinessStrategy: 'block',
         })
 
-        const { versionId } = createTunedVersion(rows)
-        setIgnoredUnknownCount(ignored)
+        const { versionId } = createTunedVersion(rows || [])
+        setIgnoredUnknownCount(ignored || 0)
         toast({
           title: '导入成功',
           description: `已创建新版本：${versionId}`,

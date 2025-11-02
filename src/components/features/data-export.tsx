@@ -55,7 +55,12 @@ export function DataExport() {
    * 导出过滤后的明细数据
    */
   const handleExportFiltered = () => {
-    exportFilteredData(filteredData, filters)
+    const exportFilterState = {
+      policyYear: filters.years,
+      weekNumber: filters.weeks,
+      thirdLevelOrganization: filters.organizations
+    }
+    exportFilteredData(filteredData, exportFilterState)
     setOpen(false)
   }
 
@@ -63,7 +68,27 @@ export function DataExport() {
    * 导出KPI汇总
    */
   const handleExportKPI = () => {
-    exportKPISummary(kpiData, filters)
+    if (kpiData) {
+      const exportFilterState = {
+        policyYear: filters.years,
+        weekNumber: filters.weeks,
+        thirdLevelOrganization: filters.organizations
+      }
+      // 将 KPIResult 转换为 KPISummarySnapshot
+      const kpiSummary = {
+        maturedMarginRate: kpiData.contribution_margin_ratio,
+        premiumAchievementRate: kpiData.premium_progress,
+        maturedClaimRate: kpiData.loss_ratio,
+        expenseRate: kpiData.expense_ratio,
+        maturityRate: kpiData.maturity_ratio,
+        maturedClaimFrequency: kpiData.matured_claim_ratio,
+        variableCostRate: kpiData.variable_cost_ratio,
+        autonomyCoefficient: kpiData.autonomy_coefficient,
+        signedPremium: kpiData.signed_premium,
+        maturedPremium: kpiData.matured_premium
+      }
+      exportKPISummary(kpiSummary, exportFilterState)
+    }
     setOpen(false)
   }
 

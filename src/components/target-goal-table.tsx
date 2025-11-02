@@ -147,7 +147,7 @@ export function TargetGoalTable() {
                   key={column.key}
                   className="cursor-pointer px-4 py-3"
                   onClick={() => handleSort(column.key)}
-                  aria-sort={isActive ? sortState.direction : 'none'}
+                  aria-sort={isActive ? (sortState.direction === 'asc' ? 'ascending' : 'descending') : 'none'}
                 >
                   <span className={cn('flex items-center gap-1 font-semibold', isActive && 'text-primary')}>
                     {column.label}
@@ -164,7 +164,7 @@ export function TargetGoalTable() {
               <td className="px-4 py-3 font-medium">{row.bizType}</td>
               <td className="px-4 py-3 text-right">{row.annualTargetInit.toLocaleString('zh-Hans-CN')}</td>
               <td className="px-4 py-3 text-right">{row.annualTargetTuned.toLocaleString('zh-Hans-CN')}</td>
-              <td className="px-4 py-3 text-right">{row.achieved.toLocaleString('zh-Hans-CN')}</td>
+              <td className="px-4 py-3 text-right">{(row.achieved || 0).toLocaleString('zh-Hans-CN')}</td>
               <td className="px-4 py-3 text-right">{renderRateCell(row.initialAchievementRate)}</td>
               <td className="px-4 py-3 text-right">{renderRateCell(row.tunedAchievementRate)}</td>
               <td

@@ -176,11 +176,51 @@ export function TargetsDataTable({ className }: TargetsDataTableProps) {
 
   // 键盘导航处理
   const handleKeyDown = useCallback((e: React.KeyboardEvent, itemKey: string) => {
-    if (e.key === 'Enter' || e.key === 'Tab') {
+    // 禁用上下键的默认行为（防止数字增减）
+    if (e.key === 'ArrowUp' || e.key === 'ArrowDown') {
       e.preventDefault()
-      const currentInput = inputRefs.current[itemKey]
-      if (currentInput) {
-        currentInput.blur()
+      
+      // 获取所有可编辑的输入框
+      const editableInputs = Object.keys(inputRefs.current)
+        .filter(key => inputRefs.current[key] !== null)
+        .sort()
+      
+      const currentIndex = editableInputs.indexOf(itemKey)
+      
+      if (currentIndex !== -1) {
+        let nextIndex: number
+        
+        if (e.key === 'ArrowUp') {
+          // 向上移动到前一个输入框
+          nextIndex = currentIndex > 0 ? currentIndex - 1 : editableInputs.length - 1
+        } else {
+          // 向下移动到下一个输入框
+          nextIndex = currentIndex < editableInputs.length - 1 ? currentIndex + 1 : 0
+        }
+        
+        const nextInput = inputRefs.current[editableInputs[nextIndex]]
+        if (nextInput) {
+          nextInput.focus()
+          nextInput.select()
+        }
+      }
+    } else if (e.key === 'Enter' || e.key === 'Tab') {
+      e.preventDefault()
+      
+      // Tab键也实现导航功能
+      const editableInputs = Object.keys(inputRefs.current)
+        .filter(key => inputRefs.current[key] !== null)
+        .sort()
+      
+      const currentIndex = editableInputs.indexOf(itemKey)
+      
+      if (currentIndex !== -1) {
+        const nextIndex = currentIndex < editableInputs.length - 1 ? currentIndex + 1 : 0
+        const nextInput = inputRefs.current[editableInputs[nextIndex]]
+        if (nextInput) {
+          nextInput.focus()
+          nextInput.select()
+        }
       }
     }
   }, [])
@@ -342,12 +382,15 @@ export function TargetsDataTable({ className }: TargetsDataTableProps) {
                         type="number"
                         value={editableTargets[row.itemKey] ?? row.annualTargetTuned}
                         onChange={(e) => {
-                          const value = parseFloat(e.target.value) || 0
-                          setEditableTargets(prev => ({ ...prev, [row.itemKey]: value }))
+                          // 只允许输入整数，过滤掉小数点和非数字字符
+                          let value = e.target.value.replace(/[^0-9]/g, '')
+                          // 如果为空，默认为0
+                          const numericValue = value === '' ? 0 : parseInt(value, 10)
+                          setEditableTargets(prev => ({ ...prev, [row.itemKey]: numericValue }))
                         }}
                         onKeyDown={(e) => handleKeyDown(e, row.itemKey)}
                         className="w-24 text-right text-sm"
-                        step="0.01"
+                        step="1"
                       />
                     </td>
                     <td className="text-right p-3">{formatNumber(row.achieved)}</td>

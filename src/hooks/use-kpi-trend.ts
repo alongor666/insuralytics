@@ -18,7 +18,7 @@ export interface KPITrendPoint {
 }
 
 // 缓存机制
-const trendCache = new Map<string, number[]>()
+const trendCache = new Map<string, (number | null)[]>()
 const CACHE_SIZE_LIMIT = 100
 
 /**
@@ -225,7 +225,7 @@ export function useKPITrend(
   const filters = useAppStore(state => state.filters)
 
   // 使用 ref 来存储上一次的计算结果，避免不必要的重新计算
-  const lastResultRef = useRef<{ key: string; data: number[] } | null>(null)
+  const lastResultRef = useRef<{ key: string; data: (number | null)[] } | null>(null)
 
   const trendData = useMemo(() => {
     // 生成筛选器哈希
@@ -302,7 +302,7 @@ export function useMultipleKPITrends(
 
     // 为每个KPI计算趋势
     kpiKeys.forEach((kpiKey: keyof ReturnType<typeof calculateKPIs>) => {
-      result[kpiKey as string] = calculateKPITrend(dataToUse, kpiKey, weeks)
+      result[kpiKey as string] = calculateKPITrend(dataToUse, kpiKey, weeks) as number[]
     })
 
     return result

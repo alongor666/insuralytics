@@ -2,10 +2,12 @@
 
 import React, { useMemo, useRef, useEffect, useState } from 'react'
 import * as echarts from 'echarts'
-import { AlertTriangle, TrendingUp } from 'lucide-react'
+import { AlertTriangle } from 'lucide-react'
 import { useTrendData } from '@/hooks/use-trend'
+import { applyFilters } from '@/hooks/use-filtered-data'
 import { formatNumber, formatPercent } from '@/utils/format'
 import { useAppStore } from '@/store/use-app-store'
+import type { FilterState, InsuranceRecord } from '@/types/insurance'
 
 /**
  * 周度经营趋势分析组件
@@ -49,14 +51,6 @@ interface ChartDataPoint {
 }
 
 /**
- * 异常原因（模拟数据）
- */
-interface AnomalyReason {
-  reason: string
-  impact: string
-}
-
-/**
  * 计算线性趋势线数据
  */
 function calculateTrendLine(data: ChartDataPoint[]): number[] {
@@ -79,50 +73,308 @@ function calculateTrendLine(data: ChartDataPoint[]): number[] {
   return data.map((_, i) => slope * i + intercept)
 }
 
-/**
- * 生成模拟异常原因
- */
-function generateAnomalyReasons(
-  lossRatio: number,
-  weekNumber: number
-): AnomalyReason[] {
-  const reasons: AnomalyReason[] = []
+interface NarrativeSummary {
+  overview: string
+  lossTrend: string
+  businessLines: string[]
+  organizationLines: string[]
+  insight: string | null
+  actionLines: string[]
+  followUp: string
+}
 
-  if (lossRatio >= 75) {
-    reasons.push({
-      reason: '高风险车型占比增加',
-      impact: '赔付率上升 +3.2pp',
-    })
-    reasons.push({
-      reason: '大额赔案集中出险',
-      impact: '单均赔款上升 +15.6%',
-    })
-    reasons.push({
-      reason: '续保客户风险等级提升',
-      impact: '风险暴露增加 +2.1pp',
-    })
-  } else if (lossRatio >= 70) {
-    reasons.push({
-      reason: '季节性事故率上升',
-      impact: '赔付率上升 +1.8pp',
-    })
-    reasons.push({
-      reason: '新能源车理赔成本增加',
-      impact: '单均赔款上升 +8.3%',
-    })
-    reasons.push({
-      reason: '渠道风险管控放松',
-      impact: '风险暴露增加 +1.2pp',
-    })
+interface DimensionHighlight {
+  key: string
+  label: string
+  lossRatio: number | null
+  lossRatioChange: number | null
+  claimPaymentWan: number
+  claimPaymentChangeWan: number | null
+  topCoverage: string | null
+  topPartner: string | null
+}
+
+function formatDeltaPercentPoint(
+  value: number | null,
+  decimals = 1
+): string | null {
+  if (value === null || Number.isNaN(value)) return null
+  const sign = value >= 0 ? '+' : ''
+  return `${sign}${value.toFixed(decimals)}pp`
+}
+
+function formatDeltaAmountWan(value: number | null, decimals = 1): string | null {
+  if (value === null || Number.isNaN(value)) return null
+  const direction = value >= 0 ? '增加' : '减少'
+  return `${direction} ${formatNumber(Math.abs(value), decimals)} 万元`
+}
+
+function createWeekScopedFilters(
+  baseFilters: FilterState,
+  year: number,
+  week: number
+): FilterState {
+  return {
+    ...baseFilters,
+    years: [year],
+    weeks: [week],
+    trendModeWeeks: week > 0 ? [week] : [],
+    singleModeWeek: week > 0 ? week : null,
+  }
+}
+
+function describeFilters(filters: FilterState): string {
+  const parts: string[] = []
+  if (filters.years?.length) {
+    parts.push(`年度=${filters.years.map(String).join('、')}`)
+  }
+  if (filters.organizations?.length) {
+    parts.push(`机构=${filters.organizations.join('、')}`)
+  }
+  if (filters.businessTypes?.length) {
+    parts.push(`业务类型=${filters.businessTypes.join('、')}`)
+  }
+  if (filters.coverageTypes?.length) {
+    parts.push(`险别=${filters.coverageTypes.join('、')}`)
+  }
+  if (filters.insuranceTypes?.length) {
+    parts.push(`保险类别=${filters.insuranceTypes.join('、')}`)
+  }
+  if (filters.customerCategories?.length) {
+    parts.push(`客户分类=${filters.customerCategories.join('、')}`)
+  }
+  if (filters.vehicleGrades?.length) {
+    parts.push(`车险评级=${filters.vehicleGrades.join('、')}`)
+  }
+  if (filters.renewalStatuses?.length) {
+    parts.push(`新续转=${filters.renewalStatuses.join('、')}`)
+  }
+  if (filters.isNewEnergy !== null && filters.isNewEnergy !== undefined) {
+    parts.push(`新能源=${filters.isNewEnergy ? '是' : '否'}`)
+  }
+  if (filters.terminalSources?.length) {
+    parts.push(`渠道=${filters.terminalSources.join('、')}`)
+  }
+  if (parts.length === 0) {
+    return '筛选条件：全部业务'
+  }
+  return `筛选条件：${parts.join(' | ')}`
+}
+
+interface TotalsAggregation {
+  signedPremiumYuan: number
+  maturedPremiumYuan: number
+  claimPaymentYuan: number
+  claimCaseCount: number
+}
+
+function aggregateTotals(records: InsuranceRecord[]): TotalsAggregation {
+  return records.reduce<TotalsAggregation>(
+    (acc, record) => {
+      acc.signedPremiumYuan += record.signed_premium_yuan
+      acc.maturedPremiumYuan += record.matured_premium_yuan
+      acc.claimPaymentYuan += record.reported_claim_payment_yuan
+      acc.claimCaseCount += record.claim_case_count
+      return acc
+    },
+    {
+      signedPremiumYuan: 0,
+      maturedPremiumYuan: 0,
+      claimPaymentYuan: 0,
+      claimCaseCount: 0,
+    }
+  )
+}
+
+function computeLossRatio(totals: TotalsAggregation): number | null {
+  if (totals.maturedPremiumYuan <= 0) return null
+  return (totals.claimPaymentYuan / totals.maturedPremiumYuan) * 100
+}
+
+function formatFilterList(values: string[], maxLength = 3): string {
+  const unique = Array.from(new Set(values.filter(Boolean)))
+  if (unique.length === 0) return '—'
+  const sliced = unique.slice(0, maxLength)
+  const suffix = unique.length > maxLength ? '等' : ''
+  return `${sliced.join('、')}${suffix}`
+}
+
+function sanitizeText(value: string | null | undefined, fallback: string): string {
+  if (value === null || value === undefined) return fallback
+  const trimmed = String(value).trim()
+  return trimmed.length > 0 ? trimmed : fallback
+}
+
+function pickTopLabel(claims: Map<string, number>): string | null {
+  let topLabel: string | null = null
+  let topValue = Number.NEGATIVE_INFINITY
+  claims.forEach((value, label) => {
+    if (value > topValue) {
+      topValue = value
+      topLabel = label
+    }
+  })
+  return topLabel
+}
+
+interface DimensionAccumulator {
+  label: string
+  currentMatured: number
+  currentClaim: number
+  previousMatured: number
+  previousClaim: number
+  coverageClaims: Map<string, number>
+  partnerClaims: Map<string, number>
+}
+
+function buildDimensionHighlights(
+  dimension: 'business' | 'organization',
+  currentRecords: InsuranceRecord[],
+  previousRecords: InsuranceRecord[]
+): DimensionHighlight[] {
+  const map = new Map<string, DimensionAccumulator>()
+
+  const ensureAccumulator = (key: string, label: string): DimensionAccumulator => {
+    if (!map.has(key)) {
+      map.set(key, {
+        label,
+        currentMatured: 0,
+        currentClaim: 0,
+        previousMatured: 0,
+        previousClaim: 0,
+        coverageClaims: new Map(),
+        partnerClaims: new Map(),
+      })
+    }
+    return map.get(key)!
   }
 
-  return reasons.slice(0, 3)
+  const getKeyAndLabel = (record: InsuranceRecord): { key: string; label: string } => {
+    if (dimension === 'business') {
+      const label = sanitizeText(record.business_type_category, '未标记业务')
+      return { key: label, label }
+    }
+    const label = sanitizeText(record.third_level_organization, '未标记机构')
+    return { key: label, label }
+  }
+
+  const getPartnerLabel = (record: InsuranceRecord): string => {
+    if (dimension === 'business') {
+      return sanitizeText(record.third_level_organization, '未标记机构')
+    }
+    return sanitizeText(record.business_type_category, '未标记业务')
+  }
+
+  currentRecords.forEach(record => {
+    const { key, label } = getKeyAndLabel(record)
+    const accumulator = ensureAccumulator(key, label)
+
+    accumulator.currentMatured += record.matured_premium_yuan
+    accumulator.currentClaim += record.reported_claim_payment_yuan
+
+    const coverageLabel = sanitizeText(record.coverage_type, '未标记险别')
+    accumulator.coverageClaims.set(
+      coverageLabel,
+      (accumulator.coverageClaims.get(coverageLabel) ?? 0) +
+        record.reported_claim_payment_yuan
+    )
+
+    const partnerLabel = getPartnerLabel(record)
+    accumulator.partnerClaims.set(
+      partnerLabel,
+      (accumulator.partnerClaims.get(partnerLabel) ?? 0) +
+        record.reported_claim_payment_yuan
+    )
+  })
+
+  previousRecords.forEach(record => {
+    const { key, label } = getKeyAndLabel(record)
+    const accumulator = ensureAccumulator(key, label)
+
+    accumulator.previousMatured += record.matured_premium_yuan
+    accumulator.previousClaim += record.reported_claim_payment_yuan
+  })
+
+  const highlights: DimensionHighlight[] = []
+
+  map.forEach((accumulator, key) => {
+    const currentMatured = accumulator.currentMatured
+    const currentClaim = accumulator.currentClaim
+    const previousMatured = accumulator.previousMatured
+    const previousClaim = accumulator.previousClaim
+
+    if (currentMatured <= 0 && currentClaim <= 0 && previousMatured <= 0 && previousClaim <= 0) {
+      return
+    }
+
+    let lossRatio: number | null = null
+    if (currentMatured > 0 && currentClaim >= 0) {
+      lossRatio = (currentClaim / currentMatured) * 100
+    }
+
+    let previousLossRatio: number | null = null
+    if (previousMatured > 0 && previousClaim >= 0) {
+      previousLossRatio = (previousClaim / previousMatured) * 100
+    }
+
+    const lossRatioChange =
+      lossRatio !== null && previousLossRatio !== null
+        ? lossRatio - previousLossRatio
+        : null
+
+    const claimPaymentWan = currentClaim / 10000
+    const claimPaymentChangeWan =
+      currentClaim - previousClaim !== 0
+        ? (currentClaim - previousClaim) / 10000
+        : null
+
+    const topCoverage = pickTopLabel(accumulator.coverageClaims)
+    const topPartner = pickTopLabel(accumulator.partnerClaims)
+
+    highlights.push({
+      key,
+      label: accumulator.label,
+      lossRatio,
+      lossRatioChange,
+      claimPaymentWan,
+      claimPaymentChangeWan,
+      topCoverage,
+      topPartner,
+    })
+  })
+
+  const valueOf = (value: number | null | undefined): number =>
+    value === null || value === undefined ? Number.NEGATIVE_INFINITY : value
+
+  highlights.sort((a, b) => {
+    const changeDiff = valueOf(b.lossRatioChange) - valueOf(a.lossRatioChange)
+    if (changeDiff !== 0 && Number.isFinite(changeDiff)) {
+      return changeDiff
+    }
+
+    const ratioDiff = valueOf(b.lossRatio) - valueOf(a.lossRatio)
+    if (ratioDiff !== 0 && Number.isFinite(ratioDiff)) {
+      return ratioDiff
+    }
+
+    return b.claimPaymentWan - a.claimPaymentWan
+  })
+
+  return highlights
 }
 
 /**
  * 生成经营摘要
  */
-function generateOperationalSummary(data: ChartDataPoint[]): string {
+function formatWeekList(weeks: number[]): string {
+  if (weeks.length === 0) return ''
+  return weeks.map((week) => `第${week}周`).join('、')
+}
+
+function generateOperationalSummary(
+  data: ChartDataPoint[],
+  mode: 'current' | 'increment'
+): string {
   if (data.length === 0) return ''
 
   const latestPoint = data[data.length - 1]
@@ -141,8 +393,95 @@ function generateOperationalSummary(data: ChartDataPoint[]): string {
 
   const totalRiskWeeks = data.filter((d) => d.isRisk).length
 
+  if (mode === 'increment') {
+    const previousPoint =
+      data.length > 1 ? data[data.length - 2] : null
+    const latestPremiumWan = formatNumber(latestPremium, 0)
+    const premiumChange =
+      previousPoint != null
+        ? latestPremium - previousPoint.signedPremium
+        : null
+    const premiumChangeText =
+      premiumChange != null
+        ? `，较上周${premiumChange >= 0 ? '增加' : '下降'} ${formatNumber(
+            Math.abs(premiumChange),
+            0
+          )} 万元`
+        : ''
+
+    const recentWindowStart = Math.max(1, data.length - 6)
+    const premiumDrops: Array<{ week: number; diff: number }> = []
+    for (let i = recentWindowStart; i < data.length; i++) {
+      const prev = data[i - 1]
+      const curr = data[i]
+      if (curr.signedPremium < prev.signedPremium) {
+        premiumDrops.push({
+          week: curr.weekNumber,
+          diff: curr.signedPremium - prev.signedPremium,
+        })
+      }
+    }
+
+    const premiumIssueText =
+      premiumDrops.length > 0
+        ? `保费周增量在${premiumDrops
+            .slice(-2)
+            .map(
+              (item) =>
+                `第${item.week}周较前一周下降 ${formatNumber(
+                  Math.abs(item.diff),
+                  0
+                )} 万元`
+            )
+            .join('、')}，需尽快排查渠道与获客效率`
+        : '保费周增量总体保持平稳'
+
+    const riskWeeks = data
+      .filter((d) => d.isRisk)
+      .map((d) => d.weekNumber)
+    const riskWeekText =
+      riskWeeks.length > 0
+        ? `赔付率预警集中在 ${formatWeekList(
+            riskWeeks.slice(-4)
+          )}，赔付压力明显上行`
+        : '赔付率暂未触发预警'
+
+    const trendWindow = data.slice(-Math.min(5, data.length))
+    const trendChange =
+      trendWindow.length >= 2
+        ? trendWindow[trendWindow.length - 1].signedPremium -
+          trendWindow[0].signedPremium
+        : 0
+    let consecutiveDecline = 0
+    for (let i = data.length - 1; i > 0; i--) {
+      if (data[i].signedPremium < data[i - 1].signedPremium) {
+        consecutiveDecline += 1
+      } else {
+        break
+      }
+    }
+
+    let trendText = '趋势暂未出现明显恶化'
+    if (trendChange < 0) {
+      const declineRemark =
+        consecutiveDecline >= 2
+          ? `已连续 ${consecutiveDecline} 周回落`
+          : '近几周动能转弱'
+      trendText = `趋势正在恶化，${declineRemark}，累计回落 ${formatNumber(
+        Math.abs(trendChange),
+        0
+      )} 万元`
+    }
+
+    let summary = `截至${latestPoint.year}年第${latestPoint.weekNumber}周，本周签单保费周增量 ${latestPremiumWan} 万元${premiumChangeText}。`
+    summary += `${premiumIssueText}。`
+    summary += `${riskWeekText}。`
+    summary += `${trendText}。`
+    return summary.trim()
+  }
+
   let summary = `截至${latestPoint.year}年第${latestPoint.weekNumber}周，`
-  summary += `年度累计签单保费 ${formatNumber(latestPremium / 10000, 2)} 亿元`
+  summary += `年度累计签单保费 ${formatNumber(latestPremium, 0)} 万元`
 
   // 修正：赔付率不用均值，直接说多少周处于预警区
   if (consecutiveRiskWeeks > 0) {
@@ -160,16 +499,19 @@ function generateOperationalSummary(data: ChartDataPoint[]): string {
  * 周度经营趋势图表组件
  */
 export const WeeklyOperationalTrend = React.memo(function WeeklyOperationalTrend() {
-  const rawData = useTrendData()
+  const trendData = useTrendData()
   const chartRef = useRef<HTMLDivElement>(null)
   const chartInstanceRef = useRef<echarts.ECharts | null>(null)
   const [selectedPoint, setSelectedPoint] = useState<ChartDataPoint | null>(null)
+  const dataViewType = useAppStore((state) => state.filters.dataViewType)
+  const filters = useAppStore((state) => state.filters)
+  const rawRecords = useAppStore((state) => state.rawData)
 
   // 处理数据
   const chartData = useMemo(() => {
-    if (!rawData || rawData.length === 0) return []
+    if (!trendData || trendData.length === 0) return []
 
-    return rawData
+    return trendData
       .map((d) => ({
         week: d.label,
         weekNumber: d.week,
@@ -182,10 +524,7 @@ export const WeeklyOperationalTrend = React.memo(function WeeklyOperationalTrend
         if (a.year !== b.year) return a.year - b.year
         return a.weekNumber - b.weekNumber
       })
-  }, [rawData])
-
-  // 获取当前数据视图类型
-  const dataViewType = useAppStore((state) => state.filters.dataViewType)
+  }, [trendData])
 
   // 处理周增量模式：跳过第一周（无法计算增量）
   const displayData = useMemo(() => {
@@ -198,13 +537,8 @@ export const WeeklyOperationalTrend = React.memo(function WeeklyOperationalTrend
 
   // 生成经营摘要
   const operationalSummary = useMemo(() => {
-    return generateOperationalSummary(displayData)
-  }, [displayData])
-
-  // 计算趋势线
-  const trendLineData = useMemo(() => {
-    return calculateTrendLine(displayData)
-  }, [displayData])
+    return generateOperationalSummary(displayData, dataViewType)
+  }, [displayData, dataViewType])
 
   // 统计数据
   const stats = useMemo(() => {
@@ -228,6 +562,261 @@ export const WeeklyOperationalTrend = React.memo(function WeeklyOperationalTrend
           : 0,
       maxLossRatio: lossRatios.length > 0 ? Math.max(...lossRatios) : 0,
     }
+  }, [displayData])
+
+  const analysisNarrative = useMemo<NarrativeSummary | null>(() => {
+    if (!displayData || displayData.length === 0) return null
+    if (!rawRecords || rawRecords.length === 0) return null
+
+    const latestPoint = displayData[displayData.length - 1]
+    if (!latestPoint) return null
+
+    const filterSummary = describeFilters(filters)
+    const weekLabel = `${latestPoint.year}年第${latestPoint.weekNumber}周`
+    const metricLabel =
+      dataViewType === 'increment' ? '签单保费周增量' : '年度累计签单保费'
+    const latestSigned = latestPoint.signedPremium
+    const latestSignedText = `${formatNumber(latestSigned, 0)} 万元`
+
+    const previousPoint =
+      displayData.length > 1 ? displayData[displayData.length - 2] : null
+    const signedDiff =
+      previousPoint !== null ? latestSigned - previousPoint.signedPremium : null
+    const signedDiffText =
+      signedDiff !== null
+        ? `，环比${signedDiff >= 0 ? '增加' : '下降'} ${formatNumber(
+            Math.abs(signedDiff),
+            0
+          )} 万元`
+        : ''
+
+    const recentValues = displayData
+      .slice(-Math.min(4, displayData.length))
+      .map((d) => d.signedPremium)
+    const recentPeak =
+      recentValues.length > 0 ? Math.max(...recentValues) : latestSigned
+    const cumulativeDrop = recentPeak - latestSigned
+    const cumulativeDropText =
+      cumulativeDrop > 0
+        ? `，较近四周峰值累计回落 ${formatNumber(cumulativeDrop, 0)} 万元`
+        : ''
+
+    let consecutiveDecline = 0
+    for (let i = displayData.length - 1; i > 0; i -= 1) {
+      if (displayData[i].signedPremium < displayData[i - 1].signedPremium) {
+        consecutiveDecline += 1
+      } else {
+        break
+      }
+    }
+    const declineText =
+      consecutiveDecline >= 2 ? `，已连续 ${consecutiveDecline} 周走低` : ''
+
+    const latestWeekRecords = applyFilters(
+      rawRecords,
+      createWeekScopedFilters(filters, latestPoint.year, latestPoint.weekNumber)
+    )
+    const previousWeekNumber =
+      previousPoint?.weekNumber ?? latestPoint.weekNumber - 1
+    const previousWeekRecords =
+      previousWeekNumber && previousWeekNumber >= 1
+        ? applyFilters(
+            rawRecords,
+            createWeekScopedFilters(
+              filters,
+              latestPoint.year,
+              previousWeekNumber
+            )
+          )
+        : []
+
+    const totalsCurrent = aggregateTotals(latestWeekRecords)
+    const totalsPrevious = aggregateTotals(previousWeekRecords)
+    const currentLossRatio = computeLossRatio(totalsCurrent)
+    const previousLossRatio = computeLossRatio(totalsPrevious)
+
+    const businessHighlights = buildDimensionHighlights(
+      'business',
+      latestWeekRecords,
+      previousWeekRecords
+    )
+    const organizationHighlights = buildDimensionHighlights(
+      'organization',
+      latestWeekRecords,
+      previousWeekRecords
+    )
+    let fallbackPreviousLossRatio: number | null = previousLossRatio
+    if (fallbackPreviousLossRatio === null) {
+      for (let i = displayData.length - 2; i >= 0; i -= 1) {
+        if (displayData[i].lossRatio !== null) {
+          fallbackPreviousLossRatio = displayData[i].lossRatio
+          break
+        }
+      }
+    }
+
+    const latestLossRatio =
+      currentLossRatio !== null ? currentLossRatio : latestPoint.lossRatio
+    const lossRatioChangeText =
+      latestLossRatio !== null && fallbackPreviousLossRatio !== null
+        ? formatDeltaPercentPoint(
+            latestLossRatio - fallbackPreviousLossRatio,
+            1
+          )
+        : null
+    const lossRatioText =
+      latestLossRatio !== null ? formatPercent(latestLossRatio, 1) : '—'
+
+    let riskStreak = 0
+    for (let i = displayData.length - 1; i >= 0; i -= 1) {
+      if (displayData[i].isRisk) {
+        riskStreak += 1
+      } else {
+        break
+      }
+    }
+
+    const claimPaymentChangeWan =
+      totalsPrevious.claimPaymentYuan > 0 || totalsCurrent.claimPaymentYuan > 0
+        ? (totalsCurrent.claimPaymentYuan - totalsPrevious.claimPaymentYuan) /
+          10000
+        : null
+
+    const overviewLine = `【经营概览】${filterSummary}；${weekLabel} ${metricLabel} ${latestSignedText}${signedDiffText}${cumulativeDropText}${declineText}。`
+
+    const lossTrendIntro =
+      riskStreak > 0
+        ? `赔付率已连续 ${riskStreak} 周触发预警`
+        : stats.totalRiskWeeks > 0
+          ? `本期共出现 ${stats.totalRiskWeeks} 个预警周`
+          : '赔付率保持在安全区间'
+    const lossTrendLine =
+      lossTrendIntro === '赔付率保持在安全区间'
+        ? `【赔付趋势】${lossTrendIntro}，最新值 ${lossRatioText}${
+            lossRatioChangeText ? `，环比${lossRatioChangeText}` : ''
+          }。`
+        : `【赔付趋势】${lossTrendIntro}，最新值 ${lossRatioText}${
+            lossRatioChangeText ? `，环比${lossRatioChangeText}` : ''
+          }${
+            claimPaymentChangeWan !== null
+              ? `，赔款${formatDeltaAmountWan(claimPaymentChangeWan, 1)}`
+              : ''
+          }。`
+
+    const businessLines = businessHighlights.slice(0, 3).map(item => {
+      const ratioText =
+        item.lossRatio !== null ? formatPercent(item.lossRatio, 1) : '—'
+      const changeText = item.lossRatioChange
+        ? formatDeltaPercentPoint(item.lossRatioChange, 1)
+        : null
+      const claimChangeText =
+        item.claimPaymentChangeWan !== null
+          ? formatDeltaAmountWan(item.claimPaymentChangeWan, 1)
+          : `赔款 ${formatNumber(item.claimPaymentWan, 1)} 万元`
+      const coverageText = item.topCoverage ?? '重点险别'
+      const partnerText =
+        item.topPartner && item.topPartner !== '未标记机构'
+          ? `，重点机构 ${item.topPartner}`
+          : ''
+      return `${item.label}：赔付率 ${ratioText}${
+        changeText ? `，环比${changeText}` : ''
+      }，${claimChangeText}，风险集中于 ${coverageText}${partnerText}`
+    })
+
+    const organizationLines = organizationHighlights.slice(0, 3).map(item => {
+      const ratioText =
+        item.lossRatio !== null ? formatPercent(item.lossRatio, 1) : '—'
+      const changeText = item.lossRatioChange
+        ? formatDeltaPercentPoint(item.lossRatioChange, 1)
+        : null
+      const claimChangeText =
+        item.claimPaymentChangeWan !== null
+          ? formatDeltaAmountWan(item.claimPaymentChangeWan, 1)
+          : `赔款 ${formatNumber(item.claimPaymentWan, 1)} 万元`
+      const coverageText = item.topCoverage ?? '重点险别'
+      const partnerText =
+        item.topPartner && item.topPartner !== '未标记业务'
+          ? `，涉及业务 ${item.topPartner}`
+          : ''
+      return `${item.label}：赔付率 ${ratioText}${
+        changeText ? `，环比${changeText}` : ''
+      }，${claimChangeText}，涉险险别 ${coverageText}${partnerText}`
+    })
+
+    const coverageHotspots = formatFilterList(
+      [
+        ...businessHighlights.map(item => item.topCoverage ?? '').filter(Boolean),
+        ...organizationHighlights.map(item => item.topCoverage ?? '').filter(Boolean),
+      ]
+    )
+    const businessHotspots = formatFilterList(
+      businessHighlights.map(item => item.label)
+    )
+    const organizationHotspots = formatFilterList(
+      organizationHighlights.map(item => item.label)
+    )
+
+    const hasHighlights =
+      businessHighlights.length > 0 || organizationHighlights.length > 0
+
+    const insightLineText = hasHighlights
+      ? `【风险洞察】异常组合集中在 ${coverageHotspots}，叠加 ${businessHotspots} 等业务类型，并显著指向 ${organizationHotspots} 等机构，需重点复核赔付控制。`
+      : null
+
+    const actionLines: string[] = []
+    if (hasHighlights) {
+      const coverageDisplay =
+        coverageHotspots === '—' ? '重点险别' : coverageHotspots
+      const businessDisplay =
+        businessHotspots === '—' ? '重点业务类型' : businessHotspots
+      const organizationDisplay =
+        organizationHotspots === '—' ? '重点机构' : organizationHotspots
+
+      if (organizationHotspots !== '—') {
+        actionLines.push(
+          `渠道：聚焦 ${organizationDisplay} 等机构，核查代理与直销渠道质量并梳理承保准入。`
+        )
+      } else {
+        actionLines.push('渠道：保持重点机构渠道巡查频次，确保异常及时上报。')
+      }
+      actionLines.push(
+        `产品：针对 ${coverageDisplay} 与 ${businessDisplay}，复盘费率及赔付条款，评估是否需调整承保策略。`
+      )
+      const primaryBusiness =
+        businessHighlights[0]?.label ??
+        (businessHotspots !== '—' ? businessHotspots.replace(/等$/, '') : '重点业务')
+      const primaryCoverage =
+        businessHighlights[0]?.topCoverage ??
+        (coverageHotspots !== '—' ? coverageHotspots.replace(/等$/, '') : '重点险别')
+      const primaryOrganization =
+        organizationHighlights[0]?.label ??
+        (organizationHotspots !== '—'
+          ? organizationHotspots.replace(/等$/, '')
+          : '重点机构')
+      actionLines.push(
+        `作业：构建“${primaryBusiness}—${primaryCoverage}—${primaryOrganization}”风险热力图，纳入周度经营例会跟踪。`
+      )
+    } else {
+      actionLines.push('渠道：当前未发现异常波动，维持现有巡检节奏即可。')
+      actionLines.push('流程：持续关注赔付率趋势，如触及阈值及时启动专项排查。')
+    }
+
+    const followUpLine = `【后续跟踪】请于下周周例会上复盘整改进度，并持续关注第${latestPoint.weekNumber + 1}周实时赔付表现。`
+
+    return {
+      overview: overviewLine,
+      lossTrend: lossTrendLine,
+      businessLines,
+      organizationLines,
+      insight: insightLineText,
+      actionLines,
+      followUp: `${followUpLine}`,
+    }
+  }, [dataViewType, displayData, filters, rawRecords, stats.totalRiskWeeks])
+
+  // 计算趋势线
+  const trendLineData = useMemo(() => {
+    return calculateTrendLine(displayData)
   }, [displayData])
 
   // 初始化和更新图表
@@ -302,11 +891,6 @@ export const WeeklyOperationalTrend = React.memo(function WeeklyOperationalTrend
 
           if (!point) return ''
 
-          const anomalyReasons =
-            point.lossRatio !== null && point.lossRatio >= LOSS_RISK_THRESHOLD
-              ? generateAnomalyReasons(point.lossRatio, point.weekNumber)
-              : []
-
           const thresholdDiff =
             point.lossRatio !== null
               ? point.lossRatio - LOSS_RISK_THRESHOLD
@@ -332,25 +916,9 @@ export const WeeklyOperationalTrend = React.memo(function WeeklyOperationalTrend
             html += `<div style="margin-bottom: 8px;">
               <span style="color: #64748b;">与阈值差值：</span>
               <span style="font-weight: 600; color: ${thresholdDiff >= 0 ? '#ef4444' : '#10b981'};">
-                ${thresholdDiff >= 0 ? '+' : ''}${thresholdDiff.toFixed(1)}pp
+              ${thresholdDiff >= 0 ? '+' : ''}${thresholdDiff.toFixed(1)}pp
               </span>
             </div>`
-          }
-
-          if (anomalyReasons.length > 0) {
-            html += `<div style="border-top: 1px solid #e2e8f0; padding-top: 8px; margin-top: 8px;">
-              <div style="font-weight: 600; margin-bottom: 6px; color: #f97316; font-size: 12px;">
-                🚨 异常原因 Top3
-              </div>`
-
-            anomalyReasons.forEach((reason, i) => {
-              html += `<div style="margin-bottom: 4px; font-size: 11px;">
-                <div style="color: #64748b;">• ${reason.reason}</div>
-                <div style="color: #94a3b8; margin-left: 12px;">${reason.impact}</div>
-              </div>`
-            })
-
-            html += `</div>`
           }
 
           html += `</div>`
@@ -673,9 +1241,55 @@ export const WeeklyOperationalTrend = React.memo(function WeeklyOperationalTrend
                 </span>
               )}
             </div>
-            <p className="mt-2 text-sm leading-relaxed text-slate-600">
-              {operationalSummary}
-            </p>
+            {analysisNarrative ? (
+              <div className="mt-2 space-y-2 text-sm leading-relaxed text-slate-600">
+                <p>{analysisNarrative.overview}</p>
+                <p>{analysisNarrative.lossTrend}</p>
+
+                {analysisNarrative.businessLines.length > 0 && (
+                  <div className="space-y-1">
+                    <p className="font-medium text-slate-700">业务类型异常</p>
+                    <ul className="list-disc space-y-1 pl-5 text-slate-600">
+                      {analysisNarrative.businessLines.map((line, index) => (
+                        <li key={`business-${index}`}>{line}</li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+
+                {analysisNarrative.organizationLines.length > 0 && (
+                  <div className="space-y-1">
+                    <p className="font-medium text-slate-700">机构集中区域</p>
+                    <ul className="list-disc space-y-1 pl-5 text-slate-600">
+                      {analysisNarrative.organizationLines.map(
+                        (line, index) => (
+                          <li key={`organization-${index}`}>{line}</li>
+                        )
+                      )}
+                    </ul>
+                  </div>
+                )}
+
+                {analysisNarrative.insight && (
+                  <p>{analysisNarrative.insight}</p>
+                )}
+
+                <div className="space-y-1">
+                  <p className="font-medium text-slate-700">管理建议</p>
+                  <ul className="list-disc space-y-1 pl-5 text-slate-600">
+                    {analysisNarrative.actionLines.map((line, index) => (
+                      <li key={`action-${index}`}>{line}</li>
+                    ))}
+                  </ul>
+                </div>
+
+                <p>{analysisNarrative.followUp}</p>
+              </div>
+            ) : (
+              <p className="mt-2 text-sm leading-relaxed text-slate-600">
+                {operationalSummary}
+              </p>
+            )}
           </div>
 
           {/* 统计标签 */}
